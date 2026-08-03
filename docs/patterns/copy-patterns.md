@@ -62,6 +62,45 @@ subtitle은 반드시 15자 이하, main_title은 반드시 14자 이하.
 }
 ```
 
+## Claude API 연동
+
+`generate-copy` 스킬은 Anthropic Claude API(`@anthropic-ai/sdk`)로 구현합니다.
+
+- **모델**: `claude-sonnet-5` — 단순 구조화 생성 작업이라 품질/비용 균형이 좋음 (호출당 약 $0.004~0.006)
+- **`temperature` 사용 불가**: Sonnet 5/Opus 5는 샘플링 파라미터(`temperature`/`top_p`/`top_k`)를 받지 않음(400 에러). 카피 다양성은 4가지 프레임워크 프롬프트 자체로 확보되어 있어 문제없음
+- **`output_config.effort: "low"`**: 단순 작업이라 낮은 effort로 비용/속도 절감
+- **`output_config.format`**: JSON 스키마를 강제해 파싱 실패를 원천 차단. 단, JSON 스키마는 글자수 제약(`minLength`/`maxLength`)을 지원하지 않으므로, 서브 15자/메인 14자 제약은 위 시스템 프롬프트 텍스트로 계속 지시해야 함
+- **환경변수**: `ANTHROPIC_API_KEY` (`.env.local`, 사용자가 직접 설정)
+
+```ts
+import Anthropic from "@anthropic-ai/sdk";
+import { z } from "zod";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+
+const client = new Anthropic(); // ANTHROPIC_API_KEY 환경변수에서 자동 로드
+
+const CopySchema = z.object({
+  copies: z.array(z.object({
+    framework: z.string(),
+    subtitle: z.string(),
+    main_title: z.string(),
+  })).length(4),
+});
+
+const response = await client.messages.parse({
+  model: "claude-sonnet-5",
+  max_tokens: 1024,
+  system: COPY_SYSTEM_PROMPT, // 위 시스템 프롬프트 그대로
+  output_config: {
+    format: zodOutputFormat(CopySchema),
+    effort: "low",
+  },
+  messages: [{ role: "user", content: benefitInputText }],
+});
+
+const copies = response.parsed_output.copies; // 타입 안전 + 스키마 검증됨
+```
+
 ## TBD
 
 - "추천 3개"로 갈지 4개 프레임워크 전부 보여줄지 최종 확인 필요

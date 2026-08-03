@@ -32,8 +32,15 @@ description: >
 }
 ```
 
+## 실제 구현
+
+Next.js API Route에서 Anthropic Claude API(`@anthropic-ai/sdk`, 모델 `claude-sonnet-5`)로 호출한다.
+구현 코드 예시와 파라미터(effort, output_config.format 등)는
+[copy-patterns.md의 "Claude API 연동"](../../../docs/patterns/copy-patterns.md#claude-api-연동) 참고.
+`ANTHROPIC_API_KEY` 환경변수 필요 (`.env.local`).
+
 ## 참조 파일
 
-- [docs/patterns/copy-patterns.md](../../../docs/patterns/copy-patterns.md) — 시스템 프롬프트 원본, 글자수 스펙
+- [docs/patterns/copy-patterns.md](../../../docs/patterns/copy-patterns.md) — 시스템 프롬프트 원본, 글자수 스펙, Claude API 연동 코드
 - [docs/guides/kakaopay-banner-guide.md](../../../docs/guides/kakaopay-banner-guide.md) — 금칙어/업종별 유의사항
 - `.claude/agents/copy-research-agent.md` — 사전 리서치 서브에이전트
