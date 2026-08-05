@@ -1,7 +1,7 @@
 // Design Ref: 에셋 라이브러리 — 자주 나오는 오브젝트는 매번 생성하지 않고 사전 제작
 // 이미지를 반환한다. 키워드/동의어 고정 매핑 방식(간단한 버전). 매칭 없으면 null을
 // 반환하고 호출부(route.ts)가 Gemini 동적 생성으로 폴백한다.
-// 원본 이미지는 docs/patterns/assets/library/에 있다.
+// 원본 이미지는 /images/library/에 있다.
 // 2026-08-04: 8개(공식 카카오페이풍 세트)로 시작, reference-3d/ 원본 7개 추가로 15개.
 // 2026-08-05 (#3): 사용자 제공 레퍼런스 3장 추가 — event-benefit은 기존 파티/컨페티
 // 이미지를 선물박스+포인트코인 이미지로 교체(더 핀테크 "혜택" 맥락에 맞음), convenience-store/
@@ -63,28 +63,27 @@ const ASSET_KEYWORDS: Record<AssetKey, string[]> = {
   'phone-repair-receipt': ['휴대폰수리비', '수리비', '폰수리'],
 };
 
-// TODO: route.ts 구현 시 public/ 아래로 옮기거나 정적 서빙 경로를 확정해야 한다.
-// 지금은 docs/ 아래 원본 위치만 가리킨다.
+// 2026-08-05: public/images/library/로 이동 완료 — Next.js가 정적으로 서빙한다.
 const ASSET_PATHS: Record<AssetKey, string> = {
-  'refund-receipt': 'docs/patterns/assets/library/refund-receipt.png',
-  'point-pouch': 'docs/patterns/assets/library/point-pouch.png',
-  'coin-stack': 'docs/patterns/assets/library/coin-stack.png',
-  passbook: 'docs/patterns/assets/library/passbook.png',
-  'discount-tag': 'docs/patterns/assets/library/discount-tag.png',
-  'cash-refund': 'docs/patterns/assets/library/cash-refund.png',
-  'event-benefit': 'docs/patterns/assets/library/event-benefit.png',
-  'gift-box': 'docs/patterns/assets/library/gift-box.png',
-  'money-bag-coins': 'docs/patterns/assets/library/money-bag-coins.png',
-  calculator: 'docs/patterns/assets/library/calculator.png',
-  capsules: 'docs/patterns/assets/library/capsules.png',
-  car: 'docs/patterns/assets/library/car.png',
-  card: 'docs/patterns/assets/library/card.png',
-  'piggy-bank': 'docs/patterns/assets/library/piggy-bank.png',
-  wallet: 'docs/patterns/assets/library/wallet.png',
-  'phone-repair-receipt': 'docs/patterns/assets/library/phone-repair-receipt.png',
-  'convenience-store': 'docs/patterns/assets/library/convenience-store.png',
-  coffee: 'docs/patterns/assets/library/coffee.png',
-  phone: 'docs/patterns/assets/library/phone.png',
+  'refund-receipt': '/images/library/refund-receipt.png',
+  'point-pouch': '/images/library/point-pouch.png',
+  'coin-stack': '/images/library/coin-stack.png',
+  passbook: '/images/library/passbook.png',
+  'discount-tag': '/images/library/discount-tag.png',
+  'cash-refund': '/images/library/cash-refund.png',
+  'event-benefit': '/images/library/event-benefit.png',
+  'gift-box': '/images/library/gift-box.png',
+  'money-bag-coins': '/images/library/money-bag-coins.png',
+  calculator: '/images/library/calculator.png',
+  capsules: '/images/library/capsules.png',
+  car: '/images/library/car.png',
+  card: '/images/library/card.png',
+  'piggy-bank': '/images/library/piggy-bank.png',
+  wallet: '/images/library/wallet.png',
+  'phone-repair-receipt': '/images/library/phone-repair-receipt.png',
+  'convenience-store': '/images/library/convenience-store.png',
+  coffee: '/images/library/coffee.png',
+  phone: '/images/library/phone.png',
 };
 
 // 2026-08-04: 두 가지 오탐/뉘앙스 손실 문제를 발견해서 보강함.

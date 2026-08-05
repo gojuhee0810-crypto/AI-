@@ -29,6 +29,8 @@ export interface GeneratedImage {
 export interface GenerateImageResponse {
   images: GeneratedImage[];
   visualizationNote?: string;
+  /** 요청한 스타일 중 일부만 실패했을 때, 성공한 이미지는 그대로 반환하고 실패한 스타일만 여기 담는다. */
+  partialErrors?: Array<{ style: ImageStyleKey; message: string }>;
 }
 
 export interface GenerateImageErrorResponse {

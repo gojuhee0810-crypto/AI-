@@ -34,14 +34,14 @@ const STYLE2_ASSET_KEYWORDS: Record<Style2AssetKey, string[]> = {
 };
 
 const STYLE2_ASSET_PATHS: Record<Style2AssetKey, string> = {
-  passbook: 'docs/patterns/assets/library-2d/passbook.png',
-  suitcase: 'docs/patterns/assets/library-2d/suitcase.png',
-  coin: 'docs/patterns/assets/library-2d/coin.png',
-  'gift-box': 'docs/patterns/assets/library-2d/gift-box.png',
-  'refund-receipt': 'docs/patterns/assets/library-2d/refund-receipt.png',
-  card: 'docs/patterns/assets/library-2d/card.png',
-  phone: 'docs/patterns/assets/library-2d/phone.png',
-  car: 'docs/patterns/assets/library-2d/car.png',
+  passbook: '/images/library-2d/passbook.png',
+  suitcase: '/images/library-2d/suitcase.png',
+  coin: '/images/library-2d/coin.png',
+  'gift-box': '/images/library-2d/gift-box.png',
+  'refund-receipt': '/images/library-2d/refund-receipt.png',
+  card: '/images/library-2d/card.png',
+  phone: '/images/library-2d/phone.png',
+  car: '/images/library-2d/car.png',
 };
 
 // 스타일 1의 OVERRIDE_MODIFIERS와 동일한 취지 — 수식어가 있으면 라이브러리를
