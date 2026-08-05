@@ -3,6 +3,9 @@
 // 반환하고 호출부(route.ts)가 Gemini 동적 생성으로 폴백한다.
 // 원본 이미지는 docs/patterns/assets/library/에 있다.
 // 2026-08-04: 8개(공식 카카오페이풍 세트)로 시작, reference-3d/ 원본 7개 추가로 15개.
+// 2026-08-05 (#3): 사용자 제공 레퍼런스 3장 추가 — event-benefit은 기존 파티/컨페티
+// 이미지를 선물박스+포인트코인 이미지로 교체(더 핀테크 "혜택" 맥락에 맞음), convenience-store/
+// coffee 신규 추가.
 //
 // ⚠️ 2026-08-04 (#2): 이 라이브러리는 스타일 1(3D)에만 쓴다. 스타일 2(2D 플랫)는
 // 여기서 매칭을 시도하지 않고 항상 OpenAI 동적 생성(images.generate, 텍스트 전용)으로
@@ -29,7 +32,10 @@ export type AssetKey =
   | 'card'
   | 'piggy-bank'
   | 'wallet'
-  | 'phone-repair-receipt';
+  | 'phone-repair-receipt'
+  | 'convenience-store'
+  | 'coffee'
+  | 'phone';
 
 // 키워드가 여러 에셋에 걸치는 경우(예: "할인"이 discount-tag/coin-stack 둘 다와 관련,
 // "저축"이 money-bag-coins/piggy-bank 둘 다와 관련), 가장 구체적이거나 관용적으로
@@ -44,6 +50,9 @@ const ASSET_KEYWORDS: Record<AssetKey, string[]> = {
   'cash-refund': ['환급', '현금환급', '캐시백'],
   'event-benefit': ['이벤트', '혜택', '파티'],
   'gift-box': ['선물', '상자', '축하', '이벤트선물'],
+  'convenience-store': ['편의점'],
+  coffee: ['커피', '커피숍', '카페'],
+  phone: ['핸드폰', '휴대폰', '스마트폰'],
   'money-bag-coins': ['돈주머니', '목돈'],
   calculator: ['계산기', '정산'],
   capsules: ['캡슐', '약', '영양제', '알약'],
@@ -73,6 +82,9 @@ const ASSET_PATHS: Record<AssetKey, string> = {
   'piggy-bank': 'docs/patterns/assets/library/piggy-bank.png',
   wallet: 'docs/patterns/assets/library/wallet.png',
   'phone-repair-receipt': 'docs/patterns/assets/library/phone-repair-receipt.png',
+  'convenience-store': 'docs/patterns/assets/library/convenience-store.png',
+  coffee: 'docs/patterns/assets/library/coffee.png',
+  phone: 'docs/patterns/assets/library/phone.png',
 };
 
 // 2026-08-04: 두 가지 오탐/뉘앙스 손실 문제를 발견해서 보강함.
@@ -86,6 +98,9 @@ const OVERRIDE_MODIFIERS = ['고장난', '고장 난', '파손된', '낡은', '�
 //    것처럼, 특정 조합이 문제될 때 그 에셋에서만 제외 처리한다. 발견될 때마다 추가할 것.
 const ASSET_EXCLUDE: Partial<Record<AssetKey, string[]>> = {
   card: ['뉴스'],
+  // "휴대폰수리비"가 phone 키워드("휴대폰")에 먼저 걸려 phone-repair-receipt로
+  // 못 가는 문제 방지 — phone 키는 "수리" 관련 입력을 제외한다.
+  phone: ['수리'],
 };
 
 export interface LibraryMatch {
