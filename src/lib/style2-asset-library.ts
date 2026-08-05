@@ -20,7 +20,14 @@ export type Style2AssetKey =
   | 'refund-receipt'
   | 'card'
   | 'phone'
-  | 'car';
+  | 'car'
+  | 'wallet'
+  | 'calculator'
+  | 'calendar'
+  | 'point-pouch'
+  | 'umbrella'
+  | 'piggy-bank'
+  | 'stock';
 
 const STYLE2_ASSET_KEYWORDS: Record<Style2AssetKey, string[]> = {
   passbook: ['통장', '입출금통장', '가계부', '거래내역'],
@@ -31,6 +38,13 @@ const STYLE2_ASSET_KEYWORDS: Record<Style2AssetKey, string[]> = {
   card: ['카드', '신용카드', '체크카드'],
   phone: ['핸드폰', '휴대폰', '스마트폰', '폰'],
   car: ['자동차', '차', '자동차보험'],
+  wallet: ['지갑', '지출'],
+  calculator: ['계산기', '정산'],
+  calendar: ['달력', '캘린더', '일정'],
+  'point-pouch': ['복주머니', '포인트주머니', '포인트'],
+  umbrella: ['우산', '보험'],
+  'piggy-bank': ['저금통', '저축', '적금'],
+  stock: ['주식', '해외주식', '해외수수료', '증권'],
 };
 
 const STYLE2_ASSET_PATHS: Record<Style2AssetKey, string> = {
@@ -42,6 +56,13 @@ const STYLE2_ASSET_PATHS: Record<Style2AssetKey, string> = {
   card: '/images/library-2d/card.png',
   phone: '/images/library-2d/phone.png',
   car: '/images/library-2d/car.png',
+  wallet: '/images/library-2d/wallet.png',
+  calculator: '/images/library-2d/calculator.png',
+  calendar: '/images/library-2d/calendar.png',
+  'point-pouch': '/images/library-2d/point-pouch.png',
+  umbrella: '/images/library-2d/umbrella.png',
+  'piggy-bank': '/images/library-2d/piggy-bank.png',
+  stock: '/images/library-2d/stock.png',
 };
 
 // 스타일 1의 OVERRIDE_MODIFIERS와 동일한 취지 — 수식어가 있으면 라이브러리를

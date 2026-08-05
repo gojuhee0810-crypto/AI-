@@ -35,7 +35,10 @@ export type AssetKey =
   | 'phone-repair-receipt'
   | 'convenience-store'
   | 'coffee'
-  | 'phone';
+  | 'phone'
+  | 'stock'
+  | 'umbrella'
+  | 'calendar';
 
 // 키워드가 여러 에셋에 걸치는 경우(예: "할인"이 discount-tag/coin-stack 둘 다와 관련,
 // "저축"이 money-bag-coins/piggy-bank 둘 다와 관련), 가장 구체적이거나 관용적으로
@@ -43,7 +46,7 @@ export type AssetKey =
 // 조정할 것.
 const ASSET_KEYWORDS: Record<AssetKey, string[]> = {
   'refund-receipt': ['환급영수증', '영수증', '환급증'],
-  'point-pouch': ['포인트주머니', '포인트', '적립금'],
+  'point-pouch': ['포인트주머니', '복주머니', '포인트', '적립금'],
   'coin-stack': ['동전', '코인', '적립'],
   passbook: ['통장', '가계부', '거래내역'],
   'discount-tag': ['할인', '할인율', '쿠폰'],
@@ -53,6 +56,9 @@ const ASSET_KEYWORDS: Record<AssetKey, string[]> = {
   'convenience-store': ['편의점'],
   coffee: ['커피', '커피숍', '카페'],
   phone: ['핸드폰', '휴대폰', '스마트폰'],
+  stock: ['주식', '해외주식', '해외수수료', '증권'],
+  umbrella: ['우산', '보험'],
+  calendar: ['달력', '캘린더', '일정'],
   'money-bag-coins': ['돈주머니', '목돈'],
   calculator: ['계산기', '정산'],
   capsules: ['캡슐', '약', '영양제', '알약'],
@@ -84,6 +90,9 @@ const ASSET_PATHS: Record<AssetKey, string> = {
   'convenience-store': '/images/library/convenience-store.png',
   coffee: '/images/library/coffee.png',
   phone: '/images/library/phone.png',
+  stock: '/images/library/stock.png',
+  umbrella: '/images/library/umbrella.png',
+  calendar: '/images/library/calendar.png',
 };
 
 // 2026-08-04: 두 가지 오탐/뉘앙스 손실 문제를 발견해서 보강함.
@@ -100,6 +109,9 @@ const ASSET_EXCLUDE: Partial<Record<AssetKey, string[]>> = {
   // "휴대폰수리비"가 phone 키워드("휴대폰")에 먼저 걸려 phone-repair-receipt로
   // 못 가는 문제 방지 — phone 키는 "수리" 관련 입력을 제외한다.
   phone: ['수리'],
+  // "자동차보험"이 umbrella 키워드("보험")에 먼저 걸려 car로 못 가는 문제 방지 —
+  // umbrella 키는 "자동차" 관련 입력을 제외한다(umbrella가 car보다 먼저 순회됨).
+  umbrella: ['자동차'],
 };
 
 export interface LibraryMatch {
