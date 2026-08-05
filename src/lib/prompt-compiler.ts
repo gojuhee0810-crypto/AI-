@@ -46,7 +46,9 @@ export async function resolveObjectBlueprint(primaryObject: string): Promise<str
         '인식에 필요한 핵심 특징만 추상화한다. Must Have는 없으면 인식 불가한 것만 2~3개, Should Have는 ' +
         '1~2개, Avoid는 헷갈리기 쉬운 리얼리즘 디테일, Recognition Cue는 단 하나. 카테고리와 그 Primary/' +
         'Secondary/Accent 색상은 반드시 아래 COLOR_TOKEN.md 표에 있는 값 그대로 써야 한다 — 색을 스스로 ' +
-        `지어내지 마라.\n\n${colorTokenDoc}`,
+        '지어내지 마라. 오브젝트 위에 읽을 수 있는 텍스트/단어/라벨(예: "STOCK", "SALE" 같은 영단어)은 ' +
+        '절대 넣지 마라 — Must Have/Should Have/Optional Details 어디에도 텍스트 라벨을 넣지 않는다. ' +
+        `통화 기호(₩, $)나 화살표 같은 심볼 하나 정도만 예외로 허용한다.\n\n${colorTokenDoc}`,
       messages: [
         {
           role: 'user',
