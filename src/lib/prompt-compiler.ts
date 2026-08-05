@@ -36,6 +36,7 @@ export async function resolveObjectBlueprint(primaryObject: string): Promise<str
   if (existing) return existing;
 
   try {
+    const colorTokenDoc = await readDoc('COLOR_TOKEN.md');
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
       model: 'claude-sonnet-4-5',
@@ -43,12 +44,13 @@ export async function resolveObjectBlueprint(primaryObject: string): Promise<str
       system:
         '너는 핀테크 아이콘 라이브러리의 오브젝트 블루프린트 작성자다. 실물을 그대로 베끼지 않고, ' +
         '인식에 필요한 핵심 특징만 추상화한다. Must Have는 없으면 인식 불가한 것만 2~3개, Should Have는 ' +
-        '1~2개, Avoid는 헷갈리기 쉬운 리얼리즘 디테일, Recognition Cue는 단 하나. 카테고리는 finance/' +
-        'payment/reward/travel/insurance/map/medical/commerce/coupon/investment/security 중 하나.',
+        '1~2개, Avoid는 헷갈리기 쉬운 리얼리즘 디테일, Recognition Cue는 단 하나. 카테고리와 그 Primary/' +
+        'Secondary/Accent 색상은 반드시 아래 COLOR_TOKEN.md 표에 있는 값 그대로 써야 한다 — 색을 스스로 ' +
+        `지어내지 마라.\n\n${colorTokenDoc}`,
       messages: [
         {
           role: 'user',
-          content: `오브젝트: "${primaryObject}"\n\n아래 마크다운 형식으로만 블루프린트를 작성해줘 (다른 설명 없이):\n\n# Object Blueprint: {영문 이름} ({한글 이름})\n\n## OBJECT\n{영문 이름}\n\n## CATEGORY\n{카테고리} (Primary {색} · Secondary {색} · Accent {색})\n\n## PURPOSE\n{1문장}\n\n## CONSTRUCTION\n{Must Have + Should Have를 자연스러운 문장으로}\n\n## SILHOUETTE\n{1문장}\n\n## PROPORTION\n{Main ~70%. Functional ~20%. Accent ~10%.}\n\n## RECOGNITION CUE\n{1문장}\n\n## OPTIONAL DETAILS\n{있으면}\n\n## AVOID\n{쉼표로 나열}`,
+          content: `오브젝트: "${primaryObject}"\n\n아래 마크다운 형식으로만 블루프린트를 작성해줘 (다른 설명 없이):\n\n# Object Blueprint: {영문 이름} ({한글 이름})\n\n## OBJECT\n{영문 이름}\n\n## CATEGORY\n{COLOR_TOKEN.md 표의 카테고리명 그대로} (Primary {표의 색+헥스} · Secondary {표의 색+헥스} · Accent {표의 색+헥스})\n\n## PURPOSE\n{1문장}\n\n## CONSTRUCTION\n{Must Have + Should Have를 자연스러운 문장으로}\n\n## SILHOUETTE\n{1문장}\n\n## PROPORTION\n{Main ~70%. Functional ~20%. Accent ~10%.}\n\n## RECOGNITION CUE\n{1문장}\n\n## OPTIONAL DETAILS\n{있으면}\n\n## AVOID\n{쉼표로 나열}`,
         },
       ],
     });
