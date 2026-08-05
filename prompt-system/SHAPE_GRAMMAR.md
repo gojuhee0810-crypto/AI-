@@ -1,6 +1,6 @@
 # Shape Grammar
 
-Use only rounded rectangles, rounded circles, capsules, soft curves, uniform corner radius. Maximum two visible planes: front face, thin side face. Never create thick extrusion, never simulate real volume. Depth should feel like stacked paper.
+Use only rounded rectangles, rounded circles, capsules, soft curves, uniform corner radius. Maximum two visible planes: front face, thin side face. Never create thick extrusion, never simulate real volume. Depth should feel like stacked paper. Depict at most two objects per illustration (a primary object plus at most one small secondary/accent object) — never combine three or more separate, distinct objects into the same icon.
 
 # Depth System
 
