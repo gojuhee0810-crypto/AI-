@@ -27,8 +27,15 @@ export type Style2AssetKey =
   | 'point-pouch'
   | 'umbrella'
   | 'piggy-bank'
-  | 'stock';
+  | 'stock'
+  | 'discount-tag'
+  | 'disease'
+  | 'dental';
 
+// 2026-08-06: phone 키워드에 있던 한 글자짜리 '폰'을 제거함 — "쿠폰"이 "폰"을 부분
+// 문자열로 포함해서 잘못 phone으로 매칭되는 버그를 라이브 테스트로 발견(discount-tag가
+// 매칭됐어야 하는데 phone 이미지가 나감). 한 글자 키워드는 다른 단어에 우연히 포함될
+// 위험이 크므로 앞으로도 새 키워드 추가 시 2글자 이상으로 유지할 것.
 const STYLE2_ASSET_KEYWORDS: Record<Style2AssetKey, string[]> = {
   passbook: ['통장', '입출금통장', '가계부', '거래내역'],
   suitcase: ['여행가방', '캐리어', '수트케이스', '캐리어가방'],
@@ -36,7 +43,7 @@ const STYLE2_ASSET_KEYWORDS: Record<Style2AssetKey, string[]> = {
   'gift-box': ['선물', '상자', '축하', '이벤트선물'],
   'refund-receipt': ['환급영수증', '영수증', '환급증'],
   card: ['카드', '신용카드', '체크카드'],
-  phone: ['핸드폰', '휴대폰', '스마트폰', '폰'],
+  phone: ['핸드폰', '휴대폰', '스마트폰'],
   car: ['자동차', '차', '자동차보험'],
   wallet: ['지갑', '지출'],
   calculator: ['계산기', '정산'],
@@ -45,6 +52,18 @@ const STYLE2_ASSET_KEYWORDS: Record<Style2AssetKey, string[]> = {
   umbrella: ['우산', '보험'],
   'piggy-bank': ['저금통', '저축', '적금'],
   stock: ['주식', '해외주식', '해외수수료', '증권'],
+  // 2026-08-06: "쿠폰" 입력이 phone과 오매칭되던 버그를 고친 뒤 실제로 동적 생성해서
+  // 확인한 이미지를 그대로 등록. 키워드는 style1 asset-library.ts의 discount-tag와 동일.
+  'discount-tag': ['할인', '할인율', '쿠폰'],
+  // 2026-08-06: 사용자 레퍼런스(UI 스크린샷) 카드에서 배경/텍스트("암 치료")를 지우고
+  // 아이콘만 남긴 이미지. "암보험"은 "보험"을 포함해 umbrella와도 겹치므로
+  // STYLE2_ASSET_EXCLUDE로 umbrella 쪽에서 제외 처리했다.
+  disease: ['질병', '암보험', '암치료', '질환'],
+  // 2026-08-06: 사용자 레퍼런스(치아+충치를 계란후라이로 표현한 일러스트) 그대로 등록.
+  // 아웃라인이 있어 스타일2의 "테두리선 없음" 규칙과는 안 맞지만, 라이브러리 톤
+  // 일관성보다 이 레퍼런스를 쓰는 걸 사용자가 직접 선택함(2026-08-06 확인).
+  // "치아보험"도 "보험"을 포함해 umbrella와 겹치므로 동일하게 제외 처리했다.
+  dental: ['치아', '치아보험', '충치', '이빨'],
 };
 
 const STYLE2_ASSET_PATHS: Record<Style2AssetKey, string> = {
@@ -63,11 +82,22 @@ const STYLE2_ASSET_PATHS: Record<Style2AssetKey, string> = {
   umbrella: '/images/library-2d/umbrella.png',
   'piggy-bank': '/images/library-2d/piggy-bank.png',
   stock: '/images/library-2d/stock.png',
+  'discount-tag': '/images/library-2d/discount-tag.png',
+  disease: '/images/library-2d/disease.png',
+  dental: '/images/library-2d/dental.png',
 };
 
 // 스타일 1의 OVERRIDE_MODIFIERS와 동일한 취지 — 수식어가 있으면 라이브러리를
 // 건너뛰고 동적 생성으로 보낸다.
 const OVERRIDE_MODIFIERS = ['고장난', '고장 난', '파손된', '낡은', '새로운', '특별한', '깨진', '빈'];
+
+// 2026-08-06: 스타일 1의 ASSET_EXCLUDE와 동일한 취지로 도입 — "암보험"이 disease의
+// 키워드이면서 동시에 umbrella의 "보험" 키워드도 부분 문자열로 포함해 다중매칭→null로
+// 빠지는 걸 막는다. umbrella는 범용 "보험" 아이콘이므로, 전용 아이콘이 있는 특정
+// 보험 종류가 나타나면 umbrella 쪽에서 양보한다.
+const STYLE2_ASSET_EXCLUDE: Partial<Record<Style2AssetKey, string[]>> = {
+  umbrella: ['암', '치아'],
+};
 
 export interface Style2LibraryMatch {
   key: Style2AssetKey;
@@ -90,6 +120,10 @@ export function findStyle2LibraryAsset(input: string): Style2LibraryMatch | null
 
   const matches: Style2LibraryMatch[] = [];
   for (const [key, keywords] of Object.entries(STYLE2_ASSET_KEYWORDS) as [Style2AssetKey, string[]][]) {
+    const excludes = STYLE2_ASSET_EXCLUDE[key] ?? [];
+    if (excludes.some((exclude) => normalized.includes(exclude))) {
+      continue;
+    }
     if (keywords.some((keyword) => normalized.includes(keyword))) {
       matches.push({ key, path: STYLE2_ASSET_PATHS[key] });
     }
