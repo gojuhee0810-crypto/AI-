@@ -8,7 +8,7 @@
 // 붙였다(docs/guides/ui-polish-checklist.md 참고).
 
 import { useState } from 'react';
-import type { AiBannerFlowState } from '@/app/(studio)/ai-banner/page';
+import type { AiBannerFlowState } from '@/types/banner-flow';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import type {
   GenerateCopyRequest,

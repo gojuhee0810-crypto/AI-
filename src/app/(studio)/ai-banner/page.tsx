@@ -1,53 +1,44 @@
 'use client';
 
-// Design Ref: docs/02-design/features/image-generation.design.md §5 — 3단계
-// 스테퍼(이미지 생성 → 카피 문구 → 최종 선택), 좌:폼 / 우:실시간 미리보기.
+// Design Ref: docs/02-design/features/banner-studio-ui.design.md §1 — 3단계
+// 스테퍼(이미지 생성 → 카피 문구 → 최종 선택), 좌:폼 6 / 우:실시간 미리보기 4.
 // 2026-08-06: 사용자 레퍼런스 스크린샷 + 사용성 검토를 거쳐 확정한 구조.
-// 2026-08-07: Astryx 제거, 순수 Tailwind로 재구현.
+// 2026-08-07: Astryx 제거 후 순수 Tailwind. 새로고침 대비 상태 저장 추가.
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AdStudioShell } from '@/components/shell/AdStudioShell';
 import { StepIndicator } from '@/components/shell/StepIndicator';
 import { Step1ImagePanel } from '@/components/ai-banner/Step1ImagePanel';
 import { Step2CopyPanel } from '@/components/ai-banner/Step2CopyPanel';
 import { Step3ReviewPanel } from '@/components/ai-banner/Step3ReviewPanel';
 import { PreviewPanel } from '@/components/ai-banner/PreviewPanel';
-import type { GeneratedImage, ImageStyleKey } from '@/types/image-generation';
-import type { CopyRecommendation } from '@/types/copy-generation';
-
-export interface AiBannerFlowState {
-  step: 1 | 2 | 3;
-  primaryObject: string;
-  accentType: 'logo' | 'badge' | 'none';
-  images: GeneratedImage[];
-  partialErrors: Array<{ style: ImageStyleKey; message: string }>;
-  isGeneratingImages: boolean;
-  regeneratingStyle: ImageStyleKey | null;
-  benefit: string;
-  copyRecommendations: CopyRecommendation[];
-  copyCategory: string;
-  isGeneratingCopy: boolean;
-  selectedCopyIndex: number | null;
-}
-
-const INITIAL_STATE: AiBannerFlowState = {
-  step: 1,
-  primaryObject: '',
-  accentType: 'none',
-  images: [],
-  partialErrors: [],
-  isGeneratingImages: false,
-  regeneratingStyle: null,
-  benefit: '',
-  copyRecommendations: [],
-  copyCategory: '',
-  isGeneratingCopy: false,
-  selectedCopyIndex: null,
-};
+import { clearFlowState, loadFlowState, saveFlowState } from '@/lib/flow-state-storage';
+import { INITIAL_FLOW_STATE, type AiBannerFlowState } from '@/types/banner-flow';
 
 export default function AiBannerStudioPage() {
-  const [state, setState] = useState<AiBannerFlowState>(INITIAL_STATE);
+  const [state, setState] = useState<AiBannerFlowState>(INITIAL_FLOW_STATE);
+  // 서버 렌더와 클라이언트 첫 렌더가 달라지면 하이드레이션이 깨지므로, 저장된 상태는
+  // 마운트 이후에 불러온다. 불러오기 전에는 저장하지 않는다 — 순서가 뒤바뀌면
+  // 복원되기 직전에 빈 상태로 덮어써서 오히려 작업을 날린다.
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    const restored = loadFlowState();
+    if (restored) setState(restored);
+    setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    saveFlowState(state);
+  }, [state, isHydrated]);
+
   const patch = (next: Partial<AiBannerFlowState>) => setState((s) => ({ ...s, ...next }));
+
+  function handleReset() {
+    setState(INITIAL_FLOW_STATE);
+    clearFlowState();
+  }
 
   const canGoNext =
     state.step === 1
@@ -66,10 +57,7 @@ export default function AiBannerStudioPage() {
           <h1 className="text-2xl font-bold text-balance text-ink">AI 광고 배너 스튜디오</h1>
           <div className="mt-3">
             {/* 완료한 단계로만 되돌아갈 수 있다. 앞 단계 건너뛰기는 막는다. */}
-            <StepIndicator
-              currentStep={state.step}
-              onStepSelect={(step) => patch({ step })}
-            />
+            <StepIndicator currentStep={state.step} onStepSelect={(step) => patch({ step })} />
           </div>
         </div>
 
@@ -89,7 +77,7 @@ export default function AiBannerStudioPage() {
         <div className="flex shrink-0 items-center justify-between border-t border-line bg-surface px-8 py-4">
           <button
             type="button"
-            onClick={() => setState(INITIAL_STATE)}
+            onClick={handleReset}
             className="min-h-10 rounded-lg border border-line px-5 text-sm font-bold text-ink transition-[background-color,scale] duration-150 hover:bg-[#f7f8fa] active:scale-[0.96]"
           >
             취소

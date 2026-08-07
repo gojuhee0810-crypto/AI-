@@ -5,7 +5,7 @@
 // 2026-08-07: Astryx 제거 후 순수 Tailwind. 브랜드 컬러 선택은 제거(사용자 확정),
 // 생성 버튼은 "지금 누르면 되는 상태"일 때만 옐로우로 둔다.
 
-import type { AiBannerFlowState } from '@/app/(studio)/ai-banner/page';
+import type { AiBannerFlowState } from '@/types/banner-flow';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import type {
   GenerateImageRequest,

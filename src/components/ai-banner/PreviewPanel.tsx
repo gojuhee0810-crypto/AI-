@@ -4,7 +4,7 @@
 // TODO: 앱 화면 목업 이미지(PNG)를 받으면 배경으로 깔고 배너 영역만 오버레이하는
 // 방식으로 교체 — 지금은 DOM으로 근사치 재현.
 
-import type { AiBannerFlowState } from '@/app/(studio)/ai-banner/page';
+import type { AiBannerFlowState } from '@/types/banner-flow';
 
 export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
   const bannerImage = state.images.find((img) => img.style === 'style-2-2d-flat') ?? state.images[0];

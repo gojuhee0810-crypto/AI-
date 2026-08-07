@@ -7,7 +7,7 @@
 // 비대칭이었음 — UX 검토에서 발견).
 // 2026-08-07: Astryx 제거, 순수 Tailwind로 재구현.
 
-import type { AiBannerFlowState } from '@/app/(studio)/ai-banner/page';
+import type { AiBannerFlowState } from '@/types/banner-flow';
 
 interface Props {
   state: AiBannerFlowState;
