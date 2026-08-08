@@ -33,6 +33,28 @@ AI 배너 스튜디오는 이러한 제작 과정을 이미지 생성부터 카�
 - 불필요한 라이브러리를 추가하지 않는다.
 - 수정 전 관련 파일을 먼저 확인한다.
 - 배포 전 `npm run build`를 실행한다.
+- 코드 수정 후 `npm test`를 실행한다. (34개, Node 네이티브 러너)
+
+## 문서 위치
+규칙은 각자 필요한 자리에 있다. 아래는 그 색인이다.
+
+| 무엇 | 어디 |
+|---|---|
+| 화면 설계 (3단계 구조, 확정 제약, 상태 표현 규칙) | `docs/02-design/features/banner-studio-ui.design.md` |
+| 이미지 생성 설계 | `docs/02-design/features/image-generation.design.md` |
+| 카피 작성 규칙 | `docs/patterns/copy-patterns-v2.md` |
+| 매체 규격 (메인 14자 / 서브 15자 / 240×240 PNG) | `docs/guides/kakaopay-banner-guide.md` |
+| 어드민 디자인 시스템 | `docs/guides/admin-design-system.md` |
+| UI 폴리시 기준 | `docs/guides/ui-polish-checklist.md` |
+
+**컬러·폰트 토큰은 `src/app/globals.css`가 유일한 진실이다.** 문서에 값을 옮겨 적지 말 것 —
+두 곳에 있으면 반드시 어긋난다.
+
+## 핵심 원칙
+- **코드로 확인 가능한 건 LLM에게 맡기지 않는다.** 글자수·중복·금칙어는 코드가 검사하고,
+  LLM은 의미 판단만 한다. (LLM은 글자를 세지 못한다)
+- **같은 실수를 두 번 하면 장치를 만든다.** AI가 반복하는 실수는 프롬프트 규칙으로,
+  사람이 빠뜨리는 절차는 에이전트로, 시간이 지나면 잊는 결정은 문서로 고정한다.
 
 ## 금지 사항
 - `.env` 파일을 수정하지 않는다.
