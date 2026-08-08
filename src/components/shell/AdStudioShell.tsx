@@ -1,49 +1,97 @@
-// Design Ref: docs/guides/admin-design-system.md — 검정 헤더 + 다크 사이드바.
-// Astryx 제거 후 순수 Tailwind로 재구현(2026-08-06).
+'use client';
 
-export function AdStudioShell({ children }: { children: React.ReactNode }) {
+// Design Ref: Figma 1211:2999 / 1211:3115 — 카카오페이 광고센터 셸.
+// 2026-08-08: Figma 실측값으로 교체. 사이드바는 검정이 아니라 밝은 회색(#f8f9fa)이다
+// — 이전엔 스크린샷이 어두워 검정으로 잘못 읽었다.
+// GNB 84px / LNB 250px, 스텝퍼는 LNB의 "AI 광고 배너" 하위 트리로 들어간다.
+
+import { StepIndicator } from '@/components/shell/StepIndicator';
+
+interface Props {
+  currentStep: 1 | 2 | 3;
+  onStepSelect?: (step: 1 | 2 | 3) => void;
+  children: React.ReactNode;
+}
+
+export function AdStudioShell({ currentStep, onStepSelect, children }: Props) {
   return (
-    <div className="flex h-dvh flex-col bg-page">
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-[#222] bg-header px-6 text-white">
-        <div className="flex items-center gap-2">
-          <span className="font-bold">pay</span>
-          <span className="text-[#555]">|</span>
-          <span>광고센터</span>
+    // 내부 스크롤을 만들지 않고 브라우저 기본 스크롤을 쓴다. 화면이 세로로 길어도
+    // GNB는 상단에, LNB는 헤더 바로 아래에 고정돼 길잡이가 사라지지 않는다.
+    <div className="flex min-h-dvh flex-col bg-page">
+      {/* GNB — dark */}
+      <header className="sticky top-0 z-20 flex h-[84px] shrink-0 items-center justify-between bg-header px-[30px] text-white">
+        <div className="flex items-center gap-2 text-[20px] font-semibold">
+          <span>pay</span>
+          <span className="text-white/30">|</span>
+          <span className="text-[18px] font-normal">광고센터</span>
         </div>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-[#999]">id****id@naver.com</span>
-          <button className="text-white hover:text-[#ccc]">로그아웃</button>
+        <div className="flex items-center gap-6">
+          <span className="text-[14px] leading-[22px] text-white">id****id@naver.com</span>
+          <button
+            type="button"
+            className="rounded-[24px] border border-white px-4 py-[7px] text-[14px] leading-[22px] font-medium text-white transition-[background-color,scale] duration-150 hover:bg-white/10 active:scale-[0.96]"
+          >
+            로그아웃
+          </button>
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1">
-        <aside className="flex w-60 shrink-0 flex-col justify-between border-r border-[#222] bg-header p-4 text-white">
-          <div className="flex flex-col gap-4">
+      <div className="flex flex-1">
+        {/* LNB — 헤더(84px) 아래에 고정. 본문이 길어져도 잘리거나 밀리지 않는다. */}
+        <aside className="sticky top-[84px] h-[calc(100dvh-84px)] w-[250px] shrink-0 self-start overflow-y-auto bg-sidebar pt-10">
+          <div className="mx-auto flex w-[190px] flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="font-bold">카카오페이_2023240</span>
-              <span className="text-xs">⌄</span>
+              <span className="text-[18px] leading-7 font-medium text-ink">
+                카카오페이_2023240
+              </span>
+              <span aria-hidden className="text-xs text-ink-muted">
+                ⌄
+              </span>
             </div>
-            <div className="flex items-center gap-2 text-sm text-[#ccc]">
-              <span aria-hidden>👤</span>
-              <span>마스터</span>
-            </div>
-            <div className="border-t border-[#222] pt-3">
-              <div className="mb-2 text-xs font-bold text-[#999]">광고 관리</div>
-              <div className="rounded-md bg-[#1a1a1a] px-3 py-2 text-sm">광고계정 관리</div>
+            <div className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className="flex size-[22px] items-center justify-center rounded-full bg-accent-soft text-[11px] text-accent"
+              >
+                ●
+              </span>
+              <span className="text-[16px] leading-[26px] text-ink">마스터</span>
             </div>
           </div>
-          {/* 히트 영역 40×40 확보 — 보이는 원은 24px이지만 누를 수 있는 범위는 넓게 */}
+
+          <div className="mx-auto my-[35px] h-px w-[190px] bg-line" />
+
+          <nav className="flex flex-col">
+            <div className="px-[30px] py-[9px]">
+              <span className="text-[22px] leading-[30px] font-medium text-ink">광고 관리</span>
+            </div>
+
+            <div className="py-[9px] pr-11 pl-[50px]">
+              <span className="text-[22px] leading-[30px] font-medium text-ink">
+                AI 광고 배너
+              </span>
+            </div>
+            <div className="pb-2">
+              <StepIndicator currentStep={currentStep} onStepSelect={onStepSelect} />
+            </div>
+
+            <div className="px-[30px] py-[9px]">
+              <span className="text-[22px] leading-[30px] text-ink-muted">광고계정 관리</span>
+            </div>
+          </nav>
+
+          {/* 접기 핸들 — 사이드바 우측 가장자리에 붙는 반원형 탭 */}
           <button
             aria-label="사이드바 접기"
-            className="flex h-10 w-10 items-center justify-center transition-[scale] duration-150 active:scale-[0.96]"
+            className="absolute top-1/2 right-0 flex h-11 w-[30px] -translate-y-1/2 items-center justify-center rounded-l-xl bg-white text-ink-muted shadow-[-5px_0_15px_0_rgba(0,0,0,0.02)] transition-[color,scale] duration-150 hover:text-ink active:scale-[0.96]"
           >
-            <span className="flex h-6 w-6 items-center justify-center rounded-full border border-[#333] text-xs text-[#999] hover:border-[#555] hover:text-white">
+            <span aria-hidden className="text-sm">
               ‹
             </span>
           </button>
         </aside>
 
-        <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
+        <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>
   );

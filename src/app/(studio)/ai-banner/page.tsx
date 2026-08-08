@@ -1,19 +1,24 @@
 'use client';
 
-// Design Ref: docs/02-design/features/banner-studio-ui.design.md §1 — 3단계
-// 스테퍼(이미지 생성 → 카피 문구 → 최종 선택), 좌:폼 6 / 우:실시간 미리보기 4.
-// 2026-08-06: 사용자 레퍼런스 스크린샷 + 사용성 검토를 거쳐 확정한 구조.
-// 2026-08-07: Astryx 제거 후 순수 Tailwind. 새로고침 대비 상태 저장 추가.
+// Design Ref: Figma 1211:3115(이미지) / 1211:2999(카피) — 좌 폼 523px + 우 미리보기 530px,
+// 스텝퍼는 상단이 아니라 LNB 트리 안에 있다(2026-08-08 사용자 확정).
+// 하단 액션 바는 우측 정렬이 아니라 가운데 정렬이다(Figma 좌표 674/793 기준).
 
 import { useEffect, useState } from 'react';
 import { AdStudioShell } from '@/components/shell/AdStudioShell';
-import { StepIndicator } from '@/components/shell/StepIndicator';
 import { Step1ImagePanel } from '@/components/ai-banner/Step1ImagePanel';
 import { Step2CopyPanel } from '@/components/ai-banner/Step2CopyPanel';
 import { Step3ReviewPanel } from '@/components/ai-banner/Step3ReviewPanel';
 import { PreviewPanel } from '@/components/ai-banner/PreviewPanel';
 import { clearFlowState, loadFlowState, saveFlowState } from '@/lib/flow-state-storage';
 import { INITIAL_FLOW_STATE, type AiBannerFlowState } from '@/types/banner-flow';
+
+/** 단계별 Primary 버튼 문구 — Figma 실측 */
+const NEXT_LABEL: Record<1 | 2 | 3, string> = {
+  1: '카피 문구 생성하러가기',
+  2: '최종 화면 넘어가기',
+  3: '소재 등록하기',
+};
 
 export default function AiBannerStudioPage() {
   const [state, setState] = useState<AiBannerFlowState>(INITIAL_FLOW_STATE);
@@ -46,64 +51,95 @@ export default function AiBannerStudioPage() {
       : state.step === 2
         ? state.selectedCopyIndex !== null
         : true;
-  const nextLabel = state.step < 3 ? '다음 단계 넘어가기' : '소재 등록하기';
 
   return (
-    <AdStudioShell>
-      <div className="flex h-full flex-col">
-        {/* 페이지 헤더: 타이틀 + 스테퍼.
-            스크롤 영역 밖에 두어 폼이 길어져도 현재 단계가 계속 보이게 한다. */}
-        <div className="shrink-0 border-b border-line bg-surface px-8 pt-5 pb-3">
-          <h1 className="text-2xl font-bold text-balance text-ink">AI 광고 배너 스튜디오</h1>
-          <div className="mt-3">
-            {/* 완료한 단계로만 되돌아갈 수 있다. 앞 단계 건너뛰기는 막는다. */}
-            <StepIndicator currentStep={state.step} onStepSelect={(step) => patch({ step })} />
+    // 완료한 단계로만 되돌아갈 수 있다. 앞 단계 건너뛰기는 막는다.
+    <AdStudioShell currentStep={state.step} onStepSelect={(step) => patch({ step })}>
+      <div className="flex min-h-full flex-col">
+        <div className="px-12 pt-10">
+          <h1 className="text-[32px] leading-[45px] font-medium tracking-[-0.4px] text-ink">
+            AI 광고 소재 만들기
+          </h1>
+
+          {/* 앞 단계에서 정해져 넘어온 캠페인·광고그룹 — 지금은 표시 전용 */}
+          <div className="mt-6 flex items-center gap-10">
+            {[
+              { badge: '캠페인', name: '일이삼사오육칠팔구십일이삼사오육칠팔구십' },
+              { badge: '광고그룹', name: '일이삼사오육칠팔구십일이삼사오육칠팔구십' },
+            ].map((item) => (
+              <div key={item.badge} className="flex items-center gap-3">
+                <span className="rounded-full bg-accent-soft px-[7px] py-[3px] text-[14px] leading-[22px] font-medium text-accent">
+                  {item.badge}
+                </span>
+                <span className="text-[16px] leading-[26px] text-ink">{item.name}</span>
+              </div>
+            ))}
           </div>
+          {/* 소재 이름은 구분선 위(미리보기 영역 밖)에 온다 — Figma 1211:3115 기준.
+              카피·최종 단계에는 없고 1단계에서만 노출된다. */}
+          {state.step === 1 && (
+            <div className="mt-10 max-w-[523px]">
+              <label
+                htmlFor="materialName"
+                className="text-[18px] leading-7 font-medium text-ink"
+              >
+                소재 이름 <span className="text-required">*</span>
+              </label>
+              <input
+                id="materialName"
+                type="text"
+                maxLength={25}
+                placeholder="소재 이름을 입력해주세요"
+                value={state.materialName}
+                onChange={(e) => patch({ materialName: e.target.value })}
+                className="mt-3 h-12 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+              />
+              <p className="mt-1.5 px-4 text-right text-[12px] leading-[19px] tabular-nums text-ink">
+                {state.materialName.length}/25
+              </p>
+            </div>
+          )}
         </div>
 
-        {/* 본문: 좌 폼 6 / 우 미리보기 4 — 미리보기 우측 배치는 확정 요구사항 */}
-        <div className="flex min-h-0 flex-1">
-          <div className="min-w-0 flex-[6] overflow-y-auto px-8 py-6">
-            {state.step === 1 && <Step1ImagePanel state={state} patch={patch} />}
-            {state.step === 2 && <Step2CopyPanel state={state} patch={patch} />}
-            {state.step === 3 && <Step3ReviewPanel state={state} patch={patch} />}
+        <div className="mt-6 border-t border-line" />
+
+        {/* 본문: 좌 폼 / 우 미리보기 — 미리보기 우측 배치는 확정 요구사항.
+            미리보기는 스크롤을 따라오도록 헤더 아래에 붙인다. */}
+        <div className="flex flex-1 items-stretch">
+          <div className="min-w-0 flex-1 px-12 py-10">
+            <div className="max-w-[523px]">
+              {state.step === 1 && <Step1ImagePanel state={state} patch={patch} />}
+              {state.step === 2 && <Step2CopyPanel state={state} patch={patch} />}
+              {state.step === 3 && <Step3ReviewPanel state={state} patch={patch} />}
+            </div>
           </div>
-          <aside className="min-w-0 flex-[4] overflow-y-auto border-l border-line bg-surface px-6 py-6">
-            <PreviewPanel state={state} />
+          <aside className="w-[530px] shrink-0 border-l border-line bg-sidebar px-12 py-10">
+            <div className="sticky top-[124px]">
+              <PreviewPanel state={state} />
+            </div>
           </aside>
         </div>
 
-        {/* 하단 고정 버튼 그룹 */}
-        <div className="flex shrink-0 items-center justify-between border-t border-line bg-surface px-8 py-4">
+        {/* 하단 액션 바 — 가운데 정렬 */}
+        <div className="flex shrink-0 items-center justify-center gap-2 py-10">
           <button
             type="button"
             onClick={handleReset}
-            className="min-h-10 rounded-lg border border-line px-5 text-sm font-bold text-ink transition-[background-color,scale] duration-150 hover:bg-[#f7f8fa] active:scale-[0.96]"
+            className="h-12 w-[111px] rounded-[24px] bg-fill text-[16px] leading-[26px] font-medium text-ink transition-[background-color,scale] duration-150 hover:bg-[#e5e9ec] active:scale-[0.96]"
           >
             취소
           </button>
-          <div className="flex items-center gap-2">
-            {state.step > 1 && (
-              <button
-                type="button"
-                onClick={() => patch({ step: (state.step - 1) as 1 | 2 })}
-                className="min-h-10 rounded-lg border border-line px-5 text-sm font-bold text-ink transition-[background-color,scale] duration-150 hover:bg-[#f7f8fa] active:scale-[0.96]"
-              >
-                이전
-              </button>
-            )}
-            <button
-              type="button"
-              disabled={!canGoNext}
-              onClick={() => {
-                if (state.step < 3) patch({ step: (state.step + 1) as 2 | 3 });
-                // step 3 "소재 등록하기"는 광고센터 연동(미착수) 전까지 동작 없음
-              }}
-              className="min-h-10 rounded-lg bg-brand px-5 text-sm font-bold text-ink transition-[background-color,scale] duration-150 enabled:hover:bg-[#f5dc00] enabled:active:scale-[0.96] disabled:cursor-not-allowed disabled:bg-[#f2f3f5] disabled:text-ink-muted"
-            >
-              {nextLabel}
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={!canGoNext}
+            onClick={() => {
+              if (state.step < 3) patch({ step: (state.step + 1) as 2 | 3 });
+              // step 3 "소재 등록하기"는 광고센터 연동(미착수) 전까지 동작 없음
+            }}
+            className="h-12 min-w-[222px] rounded-[24px] bg-brand px-6 text-[16px] leading-[26px] font-medium text-ink transition-[background-color,scale] duration-150 enabled:hover:bg-[#f2df00] enabled:active:scale-[0.96] disabled:cursor-not-allowed disabled:bg-fill disabled:text-ink-muted"
+          >
+            {NEXT_LABEL[state.step]}
+          </button>
         </div>
       </div>
     </AdStudioShell>

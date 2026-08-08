@@ -5,11 +5,19 @@
 import type { GeneratedImage, ImageStyleKey } from '@/types/image-generation';
 import type { CopyRecommendation } from '@/types/copy-generation';
 
+/** 이미지를 AI로 그릴지(그래픽 아이콘), 실제 상품 사진을 올릴지(제품 이미지). */
+export type ImageSourceType = 'graphic' | 'product';
+
 export interface AiBannerFlowState {
   step: 1 | 2 | 3;
+  /** 광고센터에 등록될 소재 이름 (25자) */
+  materialName: string;
+  imageType: ImageSourceType;
   primaryObject: string;
   accentType: 'logo' | 'badge' | 'none';
   images: GeneratedImage[];
+  /** 생성된 2종 중 실제로 쓸 스타일 */
+  selectedImageStyle: ImageStyleKey | null;
   partialErrors: Array<{ style: ImageStyleKey; message: string }>;
   isGeneratingImages: boolean;
   regeneratingStyle: ImageStyleKey | null;
@@ -22,9 +30,12 @@ export interface AiBannerFlowState {
 
 export const INITIAL_FLOW_STATE: AiBannerFlowState = {
   step: 1,
+  materialName: '',
+  imageType: 'graphic',
   primaryObject: '',
   accentType: 'none',
   images: [],
+  selectedImageStyle: null,
   partialErrors: [],
   isGeneratingImages: false,
   regeneratingStyle: null,

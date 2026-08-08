@@ -1,29 +1,42 @@
 @import "tailwindcss";
 
-/* Design Ref: docs/guides/admin-design-system.md — 카카오페이 광고센터 어드민 톤을
-   순수 Tailwind CSS 변수로 정의한다(Astryx 제거, 2026-08-06). */
+/* Design Ref: 카카오페이 광고센터 디자인 시스템.
+   2026-08-08: Figma MCP로 읽은 실측값으로 교체했다(이전 값은 스크린샷 기반 추정치).
+   Figma 토큰명 → 우리 이름 매핑을 주석으로 남겨두어 다음에 대조할 수 있게 한다. */
 :root {
-  --color-page: #f5f5f6;
-  --color-surface: #ffffff;
-  --color-header: #0a0a0a;
-  --color-brand: #fee500;
-  --color-ink: #171717;
-  --color-ink-muted: #6b7280;
-  --color-required: #e5484d;
-  --color-line: #e5e7eb;
+  --color-page: #ffffff;              /* Basic/white — 본문 배경 */
+  --color-surface: #ffffff;           /* Basic/white — 카드·인풋 */
+  --color-header: #060b11;            /* Basic/black — 상단 GNB */
+  --color-sidebar: #f8f9fa;           /* Basic/grey50 — 좌측 LNB, 미리보기 패널 */
+  --color-brand: #ffeb00;             /* Semantic/yellow — Primary CTA */
+  --color-ink: #060b11;               /* Basic/black — 본문 텍스트 */
+  --color-ink-muted: rgba(6, 11, 17, 0.48); /* black 48% — 보조 텍스트 */
+  --color-ink-faint: rgba(6, 11, 17, 0.24); /* black 24% — placeholder */
+  --color-required: #ff3c3c;          /* Semantic/red — 필수 표시 */
+  --color-line: #cfd6dc;              /* Basic/grey300 — 구분선·인풋 테두리 */
+  --color-fill: #eff2f4;              /* Basic/grey100 — 보조 버튼 배경 */
+  --color-fill-strong: #606a74;       /* Basic/grey600 — reverse 버튼 */
+  --color-accent: #008dff;            /* Semantic/blue — 배지 텍스트 */
+  --color-accent-soft: #e3f3ff;       /* Basic/Blue50 — 배지 배경 */
 }
 
 @theme inline {
   --color-page: var(--color-page);
   --color-surface: var(--color-surface);
   --color-header: var(--color-header);
+  --color-sidebar: var(--color-sidebar);
   --color-brand: var(--color-brand);
   --color-ink: var(--color-ink);
   --color-ink-muted: var(--color-ink-muted);
+  --color-ink-faint: var(--color-ink-faint);
   --color-required: var(--color-required);
   --color-line: var(--color-line);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-fill: var(--color-fill);
+  --color-fill-strong: var(--color-fill-strong);
+  --color-accent: var(--color-accent);
+  --color-accent-soft: var(--color-accent-soft);
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
 body {
