@@ -64,6 +64,41 @@ const INPUT_CLASS =
   'w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink';
 
 /**
+ * 글자수를 입력칸 안 오른쪽에 넣은 입력. 아래에 따로 한 줄을 두면 칸마다 20px씩
+ * 늘어나는데, 모달에서는 그 20px이 스크롤을 만든다.
+ */
+function CompactField({
+  value,
+  limit,
+  onChange,
+}: {
+  value: string;
+  limit: number;
+  onChange: (value: string) => void;
+}) {
+  const isOver = value.length > limit;
+  return (
+    <span className="relative block">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`h-10 w-full rounded-lg border bg-surface py-0 pr-16 pl-3 text-[15px] leading-[24px] text-ink transition-colors duration-150 outline-none ${
+          isOver ? 'border-required' : 'border-line focus:border-ink'
+        }`}
+      />
+      <span
+        className={`pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[12px] leading-[19px] tabular-nums ${
+          isOver ? 'text-required' : 'text-ink-faint'
+        }`}
+      >
+        {value.length}/{limit}
+      </span>
+    </span>
+  );
+}
+
+/**
  * 값 한 줄 = 편집 버튼 하나.
  *
  * 줄마다 알약 버튼을 달면 세 개가 세로로 늘어서 목록이 시끄럽고, 정작 누를 영역은
@@ -121,6 +156,9 @@ export function Step3ReviewPanel({ state, patch }: Props) {
   const [draftCopyIndex, setDraftCopyIndex] = useState<number | null>(null);
   const [draftCopies, setDraftCopies] = useState<CopyRecommendation[]>([]);
   const [draftStyle, setDraftStyle] = useState<ImageStyleKey | null>(null);
+  // 글자를 직접 고치는 건 드문 동작이라 기본은 접어둔다. 셋 다 입력칸을 펼쳐두면
+  // 모달이 화면을 넘겨서, 정작 흔한 일(셋 중 하나 고르기)에 스크롤이 필요해진다.
+  const [copyEditIndex, setCopyEditIndex] = useState<number | null>(null);
 
   const selectedCopy =
     state.selectedCopyIndex !== null ? state.copyRecommendations[state.selectedCopyIndex] : null;
@@ -151,6 +189,7 @@ export function Step3ReviewPanel({ state, patch }: Props) {
     setDraftCopyIndex(state.selectedCopyIndex);
     setDraftCopies(state.copyRecommendations.map((rec) => ({ ...rec })));
     setDraftStyle(state.selectedImageStyle);
+    setCopyEditIndex(null);
     setEditing(target);
   }
 
@@ -335,10 +374,11 @@ export function Step3ReviewPanel({ state, patch }: Props) {
         <div className="divider-fade flex flex-col rounded-lg border border-line">
           {draftCopies.map((rec, index) => {
             const isSelected = draftCopyIndex === index;
+            const isEditing = isSelected && copyEditIndex === index;
             return (
               <label
                 key={rec.pattern}
-                className="flex cursor-pointer flex-col gap-3 p-4 transition-colors duration-150 hover:bg-sidebar"
+                className="flex cursor-pointer flex-col gap-2 px-4 py-3 transition-colors duration-150 hover:bg-sidebar"
               >
                 <span className="flex items-center gap-2">
                   <input
@@ -352,33 +392,34 @@ export function Step3ReviewPanel({ state, patch }: Props) {
                   <span className="text-[14px] leading-[22px] font-medium text-accent">
                     {rec.pattern}
                   </span>
+                  {/* 고른 안만 글자를 고칠 수 있다. 안 쓸 카피를 다듬는 데
+                      시간을 쓰게 만들 이유가 없다. */}
+                  {isSelected && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
+                        setCopyEditIndex(isEditing ? null : index);
+                      }}
+                      className="ml-auto text-[13px] leading-[20px] font-medium text-ink-muted underline underline-offset-2 transition-colors duration-150 hover:text-ink"
+                    >
+                      {isEditing ? '완료' : '직접 수정'}
+                    </button>
+                  )}
                 </span>
 
-                {/* 고른 안만 글자를 고칠 수 있다. 셋 다 입력칸을 열면 모달이 길어지고,
-                    안 쓸 카피를 다듬는 데 시간을 쓰게 된다. */}
-                {isSelected ? (
-                  <span
-                    className="flex flex-col gap-2 pl-8"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    <span className="block">
-                      <input
-                        type="text"
-                        value={rec.subtitle}
-                        onChange={(e) => updateDraftCopy(index, 'subtitle', e.target.value)}
-                        className={`h-11 ${INPUT_CLASS}`}
-                      />
-                      <CharCounter value={rec.subtitle} limit={SUBTITLE_LIMIT} />
-                    </span>
-                    <span className="block">
-                      <input
-                        type="text"
-                        value={rec.maintitle}
-                        onChange={(e) => updateDraftCopy(index, 'maintitle', e.target.value)}
-                        className={`h-11 ${INPUT_CLASS}`}
-                      />
-                      <CharCounter value={rec.maintitle} limit={MAINTITLE_LIMIT} />
-                    </span>
+                {isEditing ? (
+                  <span className="flex flex-col gap-2 pl-8" onClick={(e) => e.preventDefault()}>
+                    <CompactField
+                      value={rec.subtitle}
+                      limit={SUBTITLE_LIMIT}
+                      onChange={(v) => updateDraftCopy(index, 'subtitle', v)}
+                    />
+                    <CompactField
+                      value={rec.maintitle}
+                      limit={MAINTITLE_LIMIT}
+                      onChange={(v) => updateDraftCopy(index, 'maintitle', v)}
+                    />
                   </span>
                 ) : (
                   <span className="flex flex-col pl-8">
