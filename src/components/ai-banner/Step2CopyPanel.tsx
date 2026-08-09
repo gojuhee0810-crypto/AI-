@@ -260,11 +260,14 @@ export function Step2CopyPanel({ state, patch }: Props) {
                     </div>
                   </div>
                 ) : (
+                  // 크기는 디자인 시스템 타입 스케일(§4)에서 고른다. 18/24는 실제
+                  // 배너보다 커서 카드가 문서처럼 읽혔다. 80%인 14.4/19.2를 그대로
+                  // 쓰지 않는 건 스케일에 없는 값이라 여기만 튀기 때문이다.
                   <div className="pl-8">
-                    <p className="text-[18px] leading-[28px] font-medium text-ink">
+                    <p className="text-[14px] leading-[22px] font-medium text-ink-muted">
                       {rec.subtitle}
                     </p>
-                    <p className="text-[24px] leading-[36px] font-medium text-balance text-ink">
+                    <p className="text-[20px] leading-[30px] font-medium tracking-[-0.2px] text-balance text-ink">
                       {rec.maintitle}
                     </p>
                   </div>
