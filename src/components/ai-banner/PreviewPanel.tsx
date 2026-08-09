@@ -23,6 +23,18 @@ const BANNER_SLOT = {
   height: '11.3%',
 } as const;
 
+/**
+ * 목업에 박혀 있는 "새 피드" 플로팅 버튼을 가리는 자리.
+ * 우리 소재와 무관한 앱 UI인데 배너 바로 아래라 시선을 끈다. 이미지에 구워져
+ * 있어 지울 수 없으므로 흰 사각형으로 덮는다(그 자리 배경도 흰색이다).
+ */
+const NEW_FEED_PATCH = {
+  left: '33%',
+  top: '81.5%',
+  width: '29%',
+  height: '5.5%',
+} as const;
+
 export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
   // 그래픽이면 고른 스타일, 제품이면 업로드한 이미지 — resolveBannerImageUrl이 판단한다.
   const bannerImageUrl = resolveBannerImageUrl(state);
@@ -42,6 +54,16 @@ export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
           src="/images/preview/pay-app-mockup.png"
           alt="카카오페이 앱 홈 화면"
           className="w-full rounded-[24px]"
+        />
+
+        {/* "새 피드" 버튼 가리기 — 배경이 흰색이라 흰 사각형으로 덮으면 자연스럽다 */}
+        <div className="absolute bg-white" style={NEW_FEED_PATCH} aria-hidden />
+
+        {/* 흰색 딤 — 앱 UI를 흐리게 눌러 지금 만드는 소재에 시선이 가게 한다.
+            배너 슬롯은 이 위에 그려서 선명하게 남는다. */}
+        <div
+          className="pointer-events-none absolute inset-0 rounded-[24px] bg-white/60"
+          aria-hidden
         />
 
         {/* 배너 슬롯 — 목업의 광고 영역을 덮고 지금 만드는 소재를 그린다 */}

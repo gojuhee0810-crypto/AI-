@@ -1,13 +1,14 @@
 'use client';
 
-// Design Ref: docs/patterns/copy-patterns-v2.md — Step2. /api/generate-copy 호출.
-// 3개 패턴 카드를 라디오처럼 감싸 1개 선택(레퍼런스 스크린샷 기준) + 인라인 수정.
+// Design Ref: Figma 1211:2999 — 카피 문구 화면.
+// 캠페인 혜택 입력(+툴팁) → AI 추천 → 패턴별 카드에서 하나 선택 → 인라인 수정.
+//
 // 타겟 입력란은 없다: 앞 단계(광고그룹)에서 이미 정해져 넘어오는 값이고, 현 시점
 // 전 타겟을 2030으로 가정한다(2026-08-06 확정). 서버가 기본값을 채운다.
-// 2026-08-07: Astryx 제거 + 순수 Tailwind. 생성 대기가 길어서 스켈레톤/진행 문구를
-// 붙였다(docs/guides/ui-polish-checklist.md 참고).
+// 2026-08-08: Figma 실측값으로 재구성. 패턴명은 액센트 블루, 카드는 테두리 방식,
+// 근거는 회색 박스에 ✦ 아이콘과 함께 둔다.
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { resolveObjectTag, type AiBannerFlowState } from '@/types/banner-flow';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import type {
@@ -31,18 +32,79 @@ const PROGRESS_MESSAGES = [
   '거의 다 됐어요',
 ];
 
+const BENEFIT_LIMIT = 25;
+const SUBTITLE_LIMIT = 15;
+const MAINTITLE_LIMIT = 14;
+
+/** ⓘ 아이콘에 마우스를 올리거나 포커스하면 뜨는 검정 말풍선. */
+function InfoTooltip({ text }: { text: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <span className="relative inline-flex">
+      <button
+        type="button"
+        aria-label={text}
+        onMouseEnter={() => setIsOpen(true)}
+        onMouseLeave={() => setIsOpen(false)}
+        onFocus={() => setIsOpen(true)}
+        onBlur={() => setIsOpen(false)}
+        className="flex size-[18px] items-center justify-center rounded-full border border-ink-muted text-[11px] leading-none text-ink-muted"
+      >
+        i
+      </button>
+      {isOpen && (
+        <span
+          role="tooltip"
+          className="absolute top-1/2 left-[calc(100%+8px)] z-10 -translate-y-1/2 rounded-lg bg-ink px-2.5 py-2 text-[14px] leading-[22px] font-medium whitespace-nowrap text-white"
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** 라디오 24px. 선택하면 브랜드 옐로우로 채운다(디자인 시스템 §6-3). */
+function Radio({ checked }: { checked: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors duration-150 ${
+        checked ? 'border-brand bg-brand' : 'border-line bg-surface'
+      }`}
+    >
+      {checked && <span className="size-2.5 rounded-full bg-ink" />}
+    </span>
+  );
+}
+
+/** 글자수 초과를 빨간색으로 알린다. LLM은 글자를 못 세므로 코드가 표시한다. */
+function CharCounter({ value, limit }: { value: string; limit: number }) {
+  return (
+    <span
+      className={`text-[12px] leading-[19px] tabular-nums ${
+        value.length > limit ? 'text-required' : 'text-ink-muted'
+      }`}
+    >
+      {value.length}/{limit}
+    </span>
+  );
+}
+
 export function Step2CopyPanel({ state, patch }: Props) {
+  const benefitId = useId();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const hasInput = state.benefit.trim().length > 0;
   const hasResult = state.copyRecommendations.length > 0;
-  // Step1과 같은 규칙: 지금 눌러야 진행되는 버튼만 옐로우, 그 외엔 회색(보조).
+  // Step1과 같은 규칙: 지금 눌러야 진행되는 버튼만 옐로우, 그 외엔 아웃라인(보조).
   const isPrimaryAction = hasInput && !state.isGeneratingCopy && !hasResult;
 
   async function handleGenerate() {
     if (!hasInput) return;
     patch({ isGeneratingCopy: true, selectedCopyIndex: null });
+    setEditingIndex(null);
     setError(null);
     try {
       const body: GenerateCopyRequest = {
@@ -79,173 +141,181 @@ export function Step2CopyPanel({ state, patch }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <section className="flex flex-col gap-2">
-        <label htmlFor="benefit" className="text-sm font-bold text-ink">
-          캠페인 혜택 <span className="text-required">*</span>
-        </label>
-        <p className="text-xs text-pretty text-ink-muted">
-          혜택, 조건, 기한을 적어주세요 — 추천 문구가 더 정확해져요
-        </p>
-        <textarea
-          id="benefit"
-          rows={3}
-          maxLength={25}
-          placeholder={'혜택·조건·기한을 순서대로 적어주세요\n예) 환급 이번달 무료'}
-          value={state.benefit}
-          onChange={(e) => patch({ benefit: e.target.value })}
-          className="w-full resize-none rounded-lg border border-line bg-surface px-4 py-3 text-sm transition-colors duration-150 outline-none placeholder:text-ink-muted focus:border-ink"
-        />
-        <div className="text-right text-xs tabular-nums text-ink-muted">
-          {state.benefit.length}/25
+    <div className="flex flex-col gap-10">
+      {/* 캠페인 혜택 */}
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <label htmlFor={benefitId} className="text-[18px] leading-7 font-medium text-ink">
+            캠페인 혜택 <span className="text-required">*</span>
+          </label>
+          <InfoTooltip text="혜택, 조건, 기한을 적어주세요 추천 문구가 더 정확해져요" />
+        </div>
+
+        <div>
+          <textarea
+            id={benefitId}
+            rows={4}
+            maxLength={BENEFIT_LIMIT}
+            placeholder={'혜택·조건·기한을 순서대로 적어주세요\n예) 환급 이번달 무료'}
+            value={state.benefit}
+            onChange={(e) => patch({ benefit: e.target.value })}
+            className="h-[139px] w-full resize-none rounded-lg border border-line bg-surface px-4 py-3 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+          />
+          <p className="mt-1.5 px-4 text-right">
+            <CharCounter value={state.benefit} limit={BENEFIT_LIMIT} />
+          </p>
         </div>
 
         <button
           type="button"
           disabled={!hasInput || state.isGeneratingCopy}
           onClick={handleGenerate}
-          className={`mt-1 w-full rounded-lg py-3.5 text-sm font-bold transition-[background-color,scale] duration-150 enabled:active:scale-[0.96] disabled:cursor-not-allowed ${
+          className={`flex h-[54px] w-full items-center justify-center gap-2 rounded-[27px] border text-[16px] leading-[26px] font-semibold transition-[background-color,scale] duration-150 enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-muted ${
             isPrimaryAction
-              ? 'bg-brand text-ink enabled:hover:bg-[#f5dc00]'
-              : 'bg-[#f2f3f5] text-ink enabled:hover:bg-[#e9ecef] disabled:text-ink-muted'
+              ? 'border-transparent bg-brand text-ink enabled:hover:bg-[#f2df00]'
+              : 'border-line bg-surface text-ink enabled:hover:bg-fill'
           }`}
         >
+          <span aria-hidden>{hasResult ? '↻' : '✦'}</span>
           {state.isGeneratingCopy
             ? '추천받는 중…'
             : hasResult
               ? 'AI 카피 다시 추천 받기'
-              : '✦ AI 카피 추천 받기'}
+              : 'AI 카피 추천 받기'}
         </button>
       </section>
 
       {error && (
-        <p className="rounded-lg bg-[#fff4f4] px-4 py-3 text-sm text-pretty text-required">
+        <p className="rounded-lg bg-[#fff4f4] px-4 py-3 text-[14px] leading-[22px] text-pretty text-required">
           카피 생성에 실패했습니다 — {error}
         </p>
       )}
 
-      {/* 생성 중: 결과 카드와 같은 모양으로 자리를 잡아둔다(레이아웃 점프 방지) */}
-      {state.isGeneratingCopy && (
-        <section className="flex flex-col gap-3">
-          <h3 className="text-sm font-bold text-ink">AI 추천 카피</h3>
-          <ProgressStatus messages={PROGRESS_MESSAGES} />
-          {[0, 1, 2].map((i) => (
-            <div
-              key={i}
-              className="flex flex-col gap-3 rounded-2xl bg-surface p-4 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.04)]"
-            >
-              <Shimmer className="h-4 w-28 rounded" />
-              <div className="flex flex-col gap-2">
-                <Shimmer className="h-3 w-40 rounded" />
-                <Shimmer className="h-6 w-52 rounded" />
-              </div>
-              <Shimmer className="h-8 w-full rounded-xl" />
-            </div>
-          ))}
-        </section>
-      )}
+      {/* AI 추천 카피 */}
+      <section className="flex flex-col gap-3">
+        <h3 className="text-[18px] leading-7 font-medium text-ink">AI 추천 카피</h3>
 
-      {!state.isGeneratingCopy && hasResult && (
-        <section className="flex flex-col gap-3">
-          <h3 className="text-sm font-bold text-ink">AI 추천 카피</h3>
-          {state.copyRecommendations.map((rec, index) => {
+        {state.isGeneratingCopy ? (
+          <>
+            <ProgressStatus messages={PROGRESS_MESSAGES} />
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex flex-col gap-4 rounded-lg border border-line p-5">
+                <Shimmer className="h-6 w-28 rounded" />
+                <div className="flex flex-col gap-2">
+                  <Shimmer className="h-6 w-48 rounded" />
+                  <Shimmer className="h-8 w-64 rounded" />
+                </div>
+                <Shimmer className="h-[77px] w-full rounded-xl" />
+              </div>
+            ))}
+          </>
+        ) : !hasResult ? (
+          <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line bg-sidebar px-6 text-center">
+            <span aria-hidden className="text-[28px] leading-none opacity-40">
+              ✦
+            </span>
+            <p className="text-[16px] leading-[26px] text-ink">아직 추천받은 카피가 없어요</p>
+            <p className="text-[14px] leading-[22px] text-ink-muted">
+              캠페인 혜택을 입력하고 추천 버튼을 눌러주세요
+            </p>
+          </div>
+        ) : (
+          state.copyRecommendations.map((rec, index) => {
             const isSelected = state.selectedCopyIndex === index;
             const isEditing = editingIndex === index;
             return (
-              <div
+              <label
                 key={rec.pattern}
-                role="radio"
-                aria-checked={isSelected}
-                tabIndex={0}
-                onClick={() => patch({ selectedCopyIndex: index })}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    patch({ selectedCopyIndex: index });
-                  }
-                }}
-                className={`cursor-pointer rounded-2xl bg-surface p-4 transition-shadow duration-150 ${
+                className={`flex cursor-pointer flex-col gap-4 rounded-lg bg-surface p-5 transition-[box-shadow] duration-150 ${
                   isSelected
-                    ? 'shadow-[0_1px_2px_rgba(0,0,0,0.05),0_0_0_2px_var(--color-ink)]'
-                    : 'shadow-[0_1px_2px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.08)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.12)]'
+                    ? 'shadow-[0_0_0_2px_var(--color-brand)]'
+                    : 'shadow-[0_0_0_1px_var(--color-line)] hover:shadow-[0_0_0_1px_var(--color-ink-muted)]'
                 }`}
               >
+                <input
+                  type="radio"
+                  name="selectedCopy"
+                  checked={isSelected}
+                  onChange={() => patch({ selectedCopyIndex: index })}
+                  className="sr-only"
+                />
+
                 <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${
-                        isSelected ? 'border-ink' : 'border-line'
-                      }`}
-                      aria-hidden
-                    >
-                      {isSelected && <span className="h-2 w-2 rounded-full bg-ink" />}
+                  <span className="flex items-center gap-2">
+                    <Radio checked={isSelected} />
+                    <span className="text-[16px] leading-[26px] font-medium text-accent">
+                      {rec.pattern}
                     </span>
-                    <span className="text-sm font-bold text-ink">{rec.pattern}</span>
-                  </div>
+                  </span>
                   <button
                     type="button"
                     onClick={(e) => {
-                      e.stopPropagation();
+                      e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
                       setEditingIndex(isEditing ? null : index);
                     }}
-                    className="min-h-10 min-w-10 rounded-lg px-2 text-xs text-ink-muted transition-[background-color,color,scale] duration-150 hover:bg-[#f7f8fa] hover:text-ink active:scale-[0.96]"
+                    className="flex min-h-8 shrink-0 items-center gap-1 rounded-[24px] border border-line bg-surface px-3 text-[13px] leading-[20px] font-medium text-ink-muted transition-[background-color,color,scale] duration-150 hover:bg-fill hover:text-ink active:scale-[0.96]"
                   >
+                    <span aria-hidden>✎</span>
                     {isEditing ? '완료' : '수정'}
                   </button>
                 </div>
 
                 {isEditing ? (
-                  <div className="mt-3 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex flex-col gap-3"
+                    onClick={(e) => e.preventDefault()}
+                  >
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs text-ink-muted">서브타이틀</label>
+                      <span className="text-[14px] leading-[22px] text-ink-muted">서브타이틀</span>
                       <input
                         type="text"
                         value={rec.subtitle}
                         onChange={(e) => updateRecommendation(index, 'subtitle', e.target.value)}
-                        className="w-full rounded-lg border border-line px-3 py-2 text-sm transition-colors duration-150 outline-none focus:border-ink"
+                        className="h-12 w-full rounded-lg border border-line px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none focus:border-ink"
                       />
-                      <span
-                        className={`text-right text-xs tabular-nums ${
-                          rec.subtitle.length > 15 ? 'text-required' : 'text-ink-muted'
-                        }`}
-                      >
-                        {rec.subtitle.length}/15
+                      <span className="px-4 text-right">
+                        <CharCounter value={rec.subtitle} limit={SUBTITLE_LIMIT} />
                       </span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <label className="text-xs text-ink-muted">메인타이틀</label>
+                      <span className="text-[14px] leading-[22px] text-ink-muted">메인타이틀</span>
                       <input
                         type="text"
                         value={rec.maintitle}
                         onChange={(e) => updateRecommendation(index, 'maintitle', e.target.value)}
-                        className="w-full rounded-lg border border-line px-3 py-2 text-sm transition-colors duration-150 outline-none focus:border-ink"
+                        className="h-12 w-full rounded-lg border border-line px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none focus:border-ink"
                       />
-                      <span
-                        className={`text-right text-xs tabular-nums ${
-                          rec.maintitle.length > 14 ? 'text-required' : 'text-ink-muted'
-                        }`}
-                      >
-                        {rec.maintitle.length}/14
+                      <span className="px-4 text-right">
+                        <CharCounter value={rec.maintitle} limit={MAINTITLE_LIMIT} />
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="mt-3">
-                    <p className="text-xs text-ink-muted">{rec.subtitle}</p>
-                    <p className="text-lg font-bold text-balance text-ink">{rec.maintitle}</p>
+                  <div className="pl-8">
+                    <p className="text-[18px] leading-[28px] font-medium text-ink">
+                      {rec.subtitle}
+                    </p>
+                    <p className="text-[24px] leading-[36px] font-medium text-balance text-ink">
+                      {rec.maintitle}
+                    </p>
                   </div>
                 )}
 
                 {rec.reason && (
-                  <p className="mt-3 rounded-xl bg-[#f7f8fa] px-3 py-2 text-xs text-pretty text-ink-muted">
-                    {rec.reason}
-                  </p>
+                  <div className="flex items-start gap-3 rounded-xl bg-sidebar px-4 py-3">
+                    <span aria-hidden className="text-[18px] leading-[27px] text-ink-muted">
+                      ✦
+                    </span>
+                    <p className="text-[15px] leading-[24px] text-pretty text-[#656a6e]">
+                      {rec.reason}
+                    </p>
+                  </div>
                 )}
-              </div>
+              </label>
             );
-          })}
-        </section>
-      )}
+          })
+        )}
+      </section>
     </div>
   );
 }
