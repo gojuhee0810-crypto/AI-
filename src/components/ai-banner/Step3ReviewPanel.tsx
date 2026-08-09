@@ -12,18 +12,24 @@
 // 값마다 되돌아갈 버튼을 붙인다. 틀린 걸 발견해도 어디로 가야 할지 모르면
 // 확인 화면은 확인만 시키고 고치지는 못하게 만든다.
 
-import { useId } from 'react';
-import { CHIP_OUTLINE } from '@/components/ai-banner/buttons';
+import { useId, useState } from 'react';
+import { EditDialog } from '@/components/ai-banner/EditDialog';
+import { Radio } from '@/components/ai-banner/Radio';
 import {
   IMAGE_STYLE_LABEL,
   IMAGE_TYPE_LABEL,
+  MAINTITLE_LIMIT,
+  MATERIAL_NAME_LIMIT,
   NOTICE_TEXT_LIMIT,
   REVIEW_NOTE_LIMIT,
+  SUBTITLE_LIMIT,
   isStepComplete,
   isValidLandingUrl,
   resolveBannerImageUrl,
   type AiBannerFlowState,
 } from '@/types/banner-flow';
+import type { CopyRecommendation } from '@/types/copy-generation';
+import type { ImageStyleKey } from '@/types/image-generation';
 
 interface Props {
   state: AiBannerFlowState;
@@ -57,44 +63,65 @@ function CharCounter({ value, limit }: { value: string; limit: number }) {
 const INPUT_CLASS =
   'w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink';
 
-/** 되돌아가기 Chip — 디자인 시스템 §6-1 Chip(높이 32, radius 24) */
-function BackChip({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+/**
+ * 값 한 줄 = 편집 버튼 하나.
+ *
+ * 줄마다 알약 버튼을 달면 세 개가 세로로 늘어서 목록이 시끄럽고, 정작 누를 영역은
+ * 그 작은 알약뿐이다. 줄 전체를 누르게 하면 조용해지면서 클릭 영역은 넓어진다.
+ * 오른쪽 꺾쇠는 "여기서 뭔가 열린다"는 표시만 한다.
+ */
+function EditRow({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
   return (
+    // 행 높이가 값에 따라 달라지므로(카피 2줄, 이미지 썸네일 48px) 세로 가운데 정렬한다.
     <button
       type="button"
       onClick={onClick}
-      className={CHIP_OUTLINE}
+      className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors duration-150 hover:bg-sidebar"
     >
-      {children}
+      {/* 라벨 폭을 고정해 값들이 한 줄로 정렬된다 — 눈이 값만 훑고 내려갈 수 있다 */}
+      <span className="w-[76px] shrink-0 text-[16px] leading-[26px] text-ink-muted">{label}</span>
+      <span className="min-w-0 flex-1">{children}</span>
+      {/* 화면에는 꺾쇠만 보이지만, 스크린리더에는 무엇을 하는 버튼인지 알려준다 */}
+      <span className="sr-only">변경</span>
+      <svg
+        aria-hidden
+        viewBox="0 0 24 24"
+        className="size-5 shrink-0 text-ink-faint"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="m9 18 6-6-6-6" />
+      </svg>
     </button>
   );
 }
 
-function Row({
-  label,
-  action,
-  children,
-}: {
-  label: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    // 행 높이가 값에 따라 달라지므로(카피 2줄, 이미지 썸네일 48px) 세로 가운데
-    // 정렬한다. 위 정렬로 두면 버튼만 위에 붙어 행마다 아래 여백이 달라 보인다.
-    <div className="flex items-center gap-4 px-5 py-4">
-      {/* 라벨 폭을 고정해 값들이 한 줄로 정렬된다 — 눈이 값만 훑고 내려갈 수 있다 */}
-      <dt className="w-[76px] shrink-0 text-[16px] leading-[26px] text-ink-muted">{label}</dt>
-      <dd className="min-w-0 flex-1">{children}</dd>
-      {action}
-    </div>
-  );
-}
+type EditTarget = 'name' | 'copy' | 'image';
 
 export function Step3ReviewPanel({ state, patch }: Props) {
   const noticeId = useId();
   const landingId = useId();
   const reviewNoteId = useId();
+
+  // 고치는 값은 초안에 담았다가 저장할 때 한 번에 반영한다. 곧바로 patch하면
+  // 취소해도 되돌릴 수 없고, 모달을 여는 동안 오른쪽 미리보기가 먼저 바뀐다.
+  const [editing, setEditing] = useState<EditTarget | null>(null);
+  const [draftName, setDraftName] = useState('');
+  const [draftCopyIndex, setDraftCopyIndex] = useState<number | null>(null);
+  const [draftCopies, setDraftCopies] = useState<CopyRecommendation[]>([]);
+  const [draftStyle, setDraftStyle] = useState<ImageStyleKey | null>(null);
+
   const selectedCopy =
     state.selectedCopyIndex !== null ? state.copyRecommendations[state.selectedCopyIndex] : null;
   const bannerImageUrl = resolveBannerImageUrl(state);
@@ -118,6 +145,39 @@ export function Step3ReviewPanel({ state, patch }: Props) {
     );
   }
 
+  function openEdit(target: EditTarget) {
+    // 현재 값을 초안으로 복사한다. 모달에서 고치다 취소하면 이 복사본만 버려진다.
+    setDraftName(state.materialName);
+    setDraftCopyIndex(state.selectedCopyIndex);
+    setDraftCopies(state.copyRecommendations.map((rec) => ({ ...rec })));
+    setDraftStyle(state.selectedImageStyle);
+    setEditing(target);
+  }
+
+  function saveEdit() {
+    if (editing === 'name') patch({ materialName: draftName.trim() });
+    if (editing === 'copy') {
+      patch({ copyRecommendations: draftCopies, selectedCopyIndex: draftCopyIndex });
+    }
+    if (editing === 'image') patch({ selectedImageStyle: draftStyle });
+    setEditing(null);
+  }
+
+  function updateDraftCopy(index: number, field: 'subtitle' | 'maintitle', value: string) {
+    setDraftCopies((prev) =>
+      prev.map((rec, i) => (i === index ? { ...rec, [field]: value } : rec)),
+    );
+  }
+
+  const canSaveEdit =
+    editing === 'name'
+      ? draftName.trim().length > 0
+      : editing === 'copy'
+        ? draftCopyIndex !== null
+        : editing === 'image'
+          ? draftStyle !== null
+          : false;
+
   // 뭔가 입력한 뒤에만 형식을 지적한다. 빈 칸을 처음부터 빨갛게 만들면
   // 아직 하지도 않은 일을 잘못했다고 말하는 셈이다.
   const showUrlError =
@@ -136,41 +196,40 @@ export function Step3ReviewPanel({ state, patch }: Props) {
       <section className="flex flex-col gap-3">
         <h3 className="text-[18px] leading-7 font-medium text-ink">선택한 소재 정보</h3>
 
-        <dl className="divider-fade flex flex-col rounded-xl border border-line bg-surface">
-          <Row label="소재 이름" action={<BackChip onClick={() => patch({ step: 1 })}>수정</BackChip>}>
-            <p className="text-[16px] leading-[26px] text-pretty text-ink">{state.materialName}</p>
-          </Row>
+        <div className="divider-fade flex flex-col overflow-hidden rounded-xl border border-line bg-surface">
+          <EditRow label="소재 이름" onClick={() => openEdit('name')}>
+            <span className="block text-[16px] leading-[26px] text-pretty text-ink">
+              {state.materialName}
+            </span>
+          </EditRow>
 
-          <Row label="카피" action={<BackChip onClick={() => patch({ step: 2 })}>카피 변경</BackChip>}>
-            <div className="flex flex-col">
+          <EditRow label="카피" onClick={() => openEdit('copy')}>
+            <span className="flex flex-col">
               <span className="text-[16px] leading-[26px] text-pretty text-ink-muted">
                 {selectedCopy.subtitle}
               </span>
               <span className="text-[16px] leading-[26px] font-medium text-pretty text-ink">
                 {selectedCopy.maintitle}
               </span>
-            </div>
-          </Row>
+            </span>
+          </EditRow>
 
-          <Row
-            label="이미지"
-            action={<BackChip onClick={() => patch({ step: 1 })}>이미지 변경</BackChip>}
-          >
-            <div className="flex items-center gap-3">
+          <EditRow label="이미지" onClick={() => openEdit('image')}>
+            <span className="flex items-center gap-3">
               <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg">
                 {bannerImageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={bannerImageUrl}
-                    alt={imageLabel}
+                    alt=""
                     className="max-h-full max-w-full object-contain"
                   />
                 )}
               </span>
               <span className="text-[16px] leading-[26px] text-ink">{imageLabel}</span>
-            </div>
-          </Row>
-        </dl>
+            </span>
+          </EditRow>
+        </div>
       </section>
 
       {/* 안내 문구 — 배너 하단에 함께 노출된다. 미리보기에 바로 반영된다. */}
@@ -244,6 +303,145 @@ export function Step3ReviewPanel({ state, patch }: Props) {
         &lsquo;등록하고 심사 요청하기&rsquo;는 광고센터 연동이 아직 준비 중이라 이 데모에서는
         동작하지 않습니다
       </p>
+
+      {/* ── 편집 모달 ─────────────────────────────────────────────── */}
+
+      <EditDialog
+        open={editing === 'name'}
+        title="소재 이름 변경"
+        canSave={canSaveEdit}
+        onClose={() => setEditing(null)}
+        onSave={saveEdit}
+      >
+        <input
+          type="text"
+          autoFocus
+          maxLength={MATERIAL_NAME_LIMIT}
+          placeholder="소재 이름을 입력해주세요"
+          value={draftName}
+          onChange={(e) => setDraftName(e.target.value)}
+          className={`h-12 ${INPUT_CLASS}`}
+        />
+        <CharCounter value={draftName} limit={MATERIAL_NAME_LIMIT} />
+      </EditDialog>
+
+      <EditDialog
+        open={editing === 'copy'}
+        title="카피 변경"
+        canSave={canSaveEdit}
+        onClose={() => setEditing(null)}
+        onSave={saveEdit}
+      >
+        <div className="divider-fade flex flex-col rounded-lg border border-line">
+          {draftCopies.map((rec, index) => {
+            const isSelected = draftCopyIndex === index;
+            return (
+              <label
+                key={rec.pattern}
+                className="flex cursor-pointer flex-col gap-3 p-4 transition-colors duration-150 hover:bg-sidebar"
+              >
+                <span className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="draftCopy"
+                    checked={isSelected}
+                    onChange={() => setDraftCopyIndex(index)}
+                    className="sr-only"
+                  />
+                  <Radio checked={isSelected} />
+                  <span className="text-[14px] leading-[22px] font-medium text-accent">
+                    {rec.pattern}
+                  </span>
+                </span>
+
+                {/* 고른 안만 글자를 고칠 수 있다. 셋 다 입력칸을 열면 모달이 길어지고,
+                    안 쓸 카피를 다듬는 데 시간을 쓰게 된다. */}
+                {isSelected ? (
+                  <span
+                    className="flex flex-col gap-2 pl-8"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    <span className="block">
+                      <input
+                        type="text"
+                        value={rec.subtitle}
+                        onChange={(e) => updateDraftCopy(index, 'subtitle', e.target.value)}
+                        className={`h-11 ${INPUT_CLASS}`}
+                      />
+                      <CharCounter value={rec.subtitle} limit={SUBTITLE_LIMIT} />
+                    </span>
+                    <span className="block">
+                      <input
+                        type="text"
+                        value={rec.maintitle}
+                        onChange={(e) => updateDraftCopy(index, 'maintitle', e.target.value)}
+                        className={`h-11 ${INPUT_CLASS}`}
+                      />
+                      <CharCounter value={rec.maintitle} limit={MAINTITLE_LIMIT} />
+                    </span>
+                  </span>
+                ) : (
+                  <span className="flex flex-col pl-8">
+                    <span className="text-[14px] leading-[22px] text-ink-muted">
+                      {rec.subtitle}
+                    </span>
+                    <span className="text-[16px] leading-[26px] font-medium text-ink">
+                      {rec.maintitle}
+                    </span>
+                  </span>
+                )}
+              </label>
+            );
+          })}
+        </div>
+      </EditDialog>
+
+      <EditDialog
+        open={editing === 'image'}
+        title="이미지 변경"
+        canSave={canSaveEdit}
+        onClose={() => setEditing(null)}
+        onSave={saveEdit}
+      >
+        {state.imageType === 'product' ? (
+          // 제품 이미지는 고를 대상이 하나뿐이라 여기서 바꿀 게 없다.
+          <p className="text-center text-[14px] leading-[22px] text-pretty text-ink-muted">
+            제품 이미지는 1단계에서 다시 올려주세요
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {state.images.map((image) => {
+              const isSelected = draftStyle === image.style;
+              return (
+                <label
+                  key={image.style}
+                  className="flex cursor-pointer flex-col gap-2 rounded-xl border border-line p-3 transition-colors duration-150 hover:bg-sidebar"
+                >
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="draftStyle"
+                      checked={isSelected}
+                      onChange={() => setDraftStyle(image.style)}
+                      className="sr-only"
+                    />
+                    <Radio checked={isSelected} />
+                    <span className="text-[14px] leading-[22px] text-ink">
+                      {IMAGE_STYLE_LABEL[image.style]}
+                    </span>
+                  </span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image.imageUrl}
+                    alt={IMAGE_STYLE_LABEL[image.style]}
+                    className="h-[110px] w-full object-contain"
+                  />
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </EditDialog>
     </div>
   );
 }

@@ -44,6 +44,14 @@ export const BADGE_STYLES: Record<
 };
 
 export const BADGE_TEXT_LIMIT = 8;
+export const MATERIAL_NAME_LIMIT = 25;
+
+/**
+ * 카카오페이 Fit 배너 카피 글자수 (docs/guides/kakaopay-banner-guide.md).
+ * 2단계 인라인 수정과 3단계 편집 모달이 같은 값을 써야 한다.
+ */
+export const SUBTITLE_LIMIT = 15;
+export const MAINTITLE_LIMIT = 14;
 
 export interface AiBannerFlowState {
   step: 1 | 2 | 3;

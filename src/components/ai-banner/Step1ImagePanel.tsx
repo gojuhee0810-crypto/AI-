@@ -23,6 +23,7 @@ import {
 import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
 import { CHIP_BASE, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
+import { Radio } from '@/components/ai-banner/Radio';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
 import type {
   GenerateImageRequest,
@@ -59,20 +60,6 @@ const PROGRESS_MESSAGES = [
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 /** 로고는 매체 가이드상 1MB 이하 (docs/guides/admin-design-system.md) */
 const MAX_LOGO_BYTES = 1024 * 1024;
-
-/** 라디오 24px. 선택하면 브랜드 옐로우로 채운다(디자인 시스템 §6-3). */
-function Radio({ checked }: { checked: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={`flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors duration-150 ${
-        checked ? 'border-brand bg-brand' : 'border-line bg-surface'
-      }`}
-    >
-      {checked && <span className="size-2.5 rounded-full bg-ink" />}
-    </span>
-  );
-}
 
 function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (

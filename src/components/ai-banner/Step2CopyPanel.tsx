@@ -9,10 +9,16 @@
 // 근거는 회색 박스에 ✦ 아이콘과 함께 둔다.
 
 import { useId, useState } from 'react';
-import { resolveObjectTag, type AiBannerFlowState } from '@/types/banner-flow';
+import {
+  MAINTITLE_LIMIT,
+  SUBTITLE_LIMIT,
+  resolveObjectTag,
+  type AiBannerFlowState,
+} from '@/types/banner-flow';
 import { CHIP_OUTLINE, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
+import { Radio } from '@/components/ai-banner/Radio';
 import type {
   GenerateCopyRequest,
   GenerateCopyResponse,
@@ -35,22 +41,6 @@ const PROGRESS_MESSAGES = [
 ];
 
 const BENEFIT_LIMIT = 25;
-const SUBTITLE_LIMIT = 15;
-const MAINTITLE_LIMIT = 14;
-
-/** 라디오 24px. 선택하면 브랜드 옐로우로 채운다(디자인 시스템 §6-3). */
-function Radio({ checked }: { checked: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={`flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors duration-150 ${
-        checked ? 'border-brand bg-brand' : 'border-line bg-surface'
-      }`}
-    >
-      {checked && <span className="size-2.5 rounded-full bg-ink" />}
-    </span>
-  );
-}
 
 /** 글자수 초과를 빨간색으로 알린다. LLM은 글자를 못 세므로 코드가 표시한다. */
 function CharCounter({ value, limit }: { value: string; limit: number }) {

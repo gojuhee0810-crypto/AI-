@@ -24,11 +24,11 @@ export function aiGenerateButtonClass(isPrimary: boolean): string {
 /**
  * 카드 안 인라인 액션 버튼(Chip) — "수정", "이미지 변경", "다시 생성하기".
  *
- * 폭은 라벨에 맡기고 좌우 20px 여백으로 잡는다. 고정 폭으로 묶으면 "수정" 두 글자가
+ * 폭은 라벨에 맡기고 좌우 8px 여백으로 잡는다. 고정 폭으로 묶으면 "수정" 두 글자가
  * 가운데만 차고 양옆이 비어 어디를 눌러야 하는지 흐려진다.
  */
 export const CHIP_BASE =
-  'flex h-8 shrink-0 items-center justify-center gap-1 rounded-[24px] px-5 text-[13px] leading-[20px] font-medium transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.96]';
+  'flex h-8 shrink-0 items-center justify-center gap-1 rounded-[24px] px-2 text-[13px] leading-[20px] font-medium transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.96]';
 
 /** 흰 배경 + 회색 테두리 (기본) */
 export const CHIP_OUTLINE = `${CHIP_BASE} border border-line bg-surface text-ink-muted hover:bg-fill hover:text-ink`;
