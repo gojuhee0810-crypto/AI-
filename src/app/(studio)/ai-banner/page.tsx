@@ -161,7 +161,10 @@ export default function AiBannerStudioPage() {
           )}
         </div>
 
-        <div className="mt-6 mr-12 border-t border-line" />
+        {/* 구분선은 타이틀·라벨과 같은 지점(좌우 패딩 48)에서 시작한다.
+            화면 왼쪽 끝까지 물리면 페이지를 가로로 자르는 선처럼 보여,
+            위아래가 같은 폼이라는 게 안 읽힌다. */}
+        <div className="mx-12 mt-6 border-t border-line" />
 
         {/* 본문: 좌 폼 / 우 미리보기 — 미리보기 우측 배치는 확정 요구사항.
             미리보기는 스크롤을 따라오도록 헤더 아래에 붙인다. */}
