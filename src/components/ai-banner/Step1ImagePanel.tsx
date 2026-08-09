@@ -223,7 +223,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
               key={opt.value}
               className={`flex h-12 items-center gap-2 rounded-lg px-4 transition-[background-color,box-shadow] duration-150 ${
                 state.imageType === opt.value
-                  ? 'bg-brand/12 shadow-[0_0_0_2px_var(--color-brand)]'
+                  ? 'bg-surface shadow-[0_0_0_2px_var(--color-brand)]'
                   : 'bg-surface shadow-[0_0_0_1px_var(--color-line)] hover:shadow-[0_0_0_1px_var(--color-ink-muted)]'
               } ${hasMaterialName ? 'cursor-pointer' : 'cursor-not-allowed'}`}
             >
@@ -268,19 +268,27 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
               </p>
             </div>
 
+            {/* 결과가 나온 뒤에는 못 누르게 막는다. 카드마다 "다시 생성하기"가 있어
+                여기서 또 전체 생성을 돌리면 방금 고른 것이 통째로 날아간다. */}
             <button
               type="button"
-              disabled={!hasInput || state.isGeneratingImages}
+              disabled={!hasInput || state.isGeneratingImages || hasResult}
+              title={hasResult ? '다시 만들려면 각 카드의 "다시 생성하기"를 눌러주세요' : undefined}
               onClick={handleGenerate}
               className={`flex h-12 w-full items-center justify-center gap-2 rounded-[24px] border text-[16px] leading-[26px] font-medium transition-[background-color,scale] duration-150 enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-muted ${
                 isPrimaryAction
                   ? 'border-transparent bg-brand text-ink enabled:hover:bg-[#f2df00]'
-                  : 'border-black/[0.06] bg-[#f0f0f0] text-ink enabled:hover:bg-[#e9e9e9]'
+                  : 'border-black/[0.06] bg-[#f0f0f0] text-ink enabled:hover:bg-brand'
               }`}
             >
               <span aria-hidden>✦</span>
               {state.isGeneratingImages ? '생성 중…' : 'AI 이미지 2종 생성하기'}
             </button>
+            {hasResult && (
+              <p className="text-[13px] leading-[20px] text-ink-muted">
+                다시 만들려면 아래 카드의 &lsquo;다시 생성하기&rsquo;를 눌러주세요
+              </p>
+            )}
           </section>
 
           {/* AI 이미지 생성 — 결과 선택 */}
@@ -319,7 +327,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                         image ? 'cursor-pointer' : 'cursor-default'
                       } ${
                         isSelected
-                          ? 'bg-brand/12 shadow-[0_0_0_2px_var(--color-brand),0_4px_12px_rgba(0,0,0,0.06)]'
+                          ? 'bg-surface shadow-[0_0_0_2px_var(--color-brand),0_4px_12px_rgba(0,0,0,0.06)]'
                           : 'bg-surface shadow-[0_0_0_1px_var(--color-line)] hover:shadow-[0_0_0_1px_var(--color-ink-muted)]'
                       }`}
                     >
@@ -369,7 +377,9 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                               e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
                               handleRegenerate(style);
                             }}
-                            className="min-h-8 self-center rounded-[24px] border border-line bg-surface px-3 text-[13px] leading-[20px] font-medium text-ink-muted transition-[background-color,color,scale] duration-150 hover:bg-fill hover:text-ink active:scale-[0.96] disabled:cursor-not-allowed"
+                            // 카드에 마우스를 올리면 이 버튼만 옐로우로 바뀐다 —
+                            // 카드 배경을 물들이지 않고 눌러야 할 곳만 알린다.
+                            className="min-h-8 self-center rounded-[24px] border border-line bg-fill px-3 text-[13px] leading-[20px] font-medium text-ink-muted transition-[background-color,border-color,color,scale] duration-150 group-hover:border-transparent group-hover:bg-brand group-hover:text-ink active:scale-[0.96] disabled:cursor-not-allowed"
                           >
                             다시 생성하기
                           </button>
