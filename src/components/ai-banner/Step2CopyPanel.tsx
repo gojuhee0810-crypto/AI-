@@ -10,6 +10,7 @@
 
 import { useId, useState } from 'react';
 import { resolveObjectTag, type AiBannerFlowState } from '@/types/banner-flow';
+import { CHIP_OUTLINE } from '@/components/ai-banner/chip';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
 import type {
@@ -193,16 +194,20 @@ export function Step2CopyPanel({ state, patch }: Props) {
             </p>
           </div>
         ) : (
-          state.copyRecommendations.map((rec, index) => {
-            const isSelected = state.selectedCopyIndex === index;
-            const isEditing = editingIndex === index;
-            return (
-              <label
-                key={rec.pattern}
-                // 선택 표시는 라디오 하나로만. 테두리 색까지 바뀌면 인풋 포커스와
-                // 뒤섞여 오히려 흐려진다. 호버는 연한 회색 배경만.
-                className="flex cursor-pointer flex-col gap-4 rounded-lg border border-line bg-surface p-5 transition-colors duration-150 hover:bg-sidebar"
-              >
+          // 카드를 따로 세우지 않고 한 박스에 얇은 선으로만 나눈다. 셋은 같은 질문에
+          // 대한 답이라 하나의 목록으로 읽혀야 비교가 쉽다 — 카드로 떼어놓으면
+          // 각각이 독립된 것처럼 보여 눈이 셋을 오가지 않는다.
+          <div className="flex flex-col divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">
+            {state.copyRecommendations.map((rec, index) => {
+              const isSelected = state.selectedCopyIndex === index;
+              const isEditing = editingIndex === index;
+              return (
+                <label
+                  key={rec.pattern}
+                  // 선택 표시는 라디오 하나로만. 테두리 색까지 바뀌면 인풋 포커스와
+                  // 뒤섞여 오히려 흐려진다. 호버는 연한 회색 배경만.
+                  className="flex cursor-pointer flex-col gap-4 p-5 transition-colors duration-150 hover:bg-sidebar"
+                >
                 <input
                   type="radio"
                   name="selectedCopy"
@@ -224,7 +229,7 @@ export function Step2CopyPanel({ state, patch }: Props) {
                       e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
                       setEditingIndex(isEditing ? null : index);
                     }}
-                    className="flex min-h-8 shrink-0 items-center gap-1 rounded-[24px] border border-line bg-surface px-3 text-[13px] leading-[20px] font-medium text-ink-muted transition-[background-color,color,scale] duration-150 hover:bg-fill hover:text-ink active:scale-[0.96]"
+                    className={CHIP_OUTLINE}
                   >
                     <span aria-hidden>✎</span>
                     {isEditing ? '완료' : '수정'}
@@ -272,19 +277,22 @@ export function Step2CopyPanel({ state, patch }: Props) {
                   </div>
                 )}
 
-                {rec.reason && (
-                  <div className="flex items-start gap-3 rounded-xl bg-sidebar px-4 py-3">
-                    <span aria-hidden className="text-[18px] leading-[27px] text-ink-muted">
-                      ✦
-                    </span>
-                    <p className="text-[15px] leading-[24px] text-pretty text-[#656a6e]">
-                      {rec.reason}
-                    </p>
-                  </div>
-                )}
-              </label>
-            );
-          })
+                  {rec.reason && (
+                    // 호버 배경(sidebar)과 같은 색이면 마우스를 올렸을 때 근거 박스가
+                    // 사라진 것처럼 보인다 — 한 단계 진한 fill을 쓴다.
+                    <div className="flex items-start gap-3 rounded-xl bg-fill px-4 py-3">
+                      <span aria-hidden className="text-[18px] leading-[27px] text-ink-muted">
+                        ✦
+                      </span>
+                      <p className="text-[15px] leading-[24px] text-pretty text-[#656a6e]">
+                        {rec.reason}
+                      </p>
+                    </div>
+                  )}
+                </label>
+              );
+            })}
+          </div>
         )}
       </section>
     </div>

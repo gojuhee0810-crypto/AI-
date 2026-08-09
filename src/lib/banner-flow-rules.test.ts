@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   INITIAL_FLOW_STATE,
   isStepComplete,
+  isValidLandingUrl,
   resolveBannerImageUrl,
   resolveObjectTag,
   type AiBannerFlowState,
@@ -86,8 +87,25 @@ test('2단계는 혜택 입력과 카피 선택이 모두 있어야 끝난다', 
   );
 });
 
-test('3단계는 검토만 하므로 항상 통과한다', () => {
-  assert.equal(isStepComplete(build(), 3), true);
+// 3단계는 확인만 하는 화면이 아니다 — 등록 정보(랜딩 URL)를 받는다.
+test('3단계는 랜딩 URL이 없으면 등록할 수 없다', () => {
+  assert.equal(isStepComplete(build(), 3), false);
+  assert.equal(isStepComplete(build({ landingUrl: '   ' }), 3), false);
+});
+
+test('3단계는 https 랜딩 URL이 있으면 통과한다', () => {
+  assert.equal(isStepComplete(build({ landingUrl: 'https://pay.kakao.com/event' }), 3), true);
+  // 앞뒤 공백은 붙여넣다 흔히 남는다 — 그것 때문에 막지 않는다
+  assert.equal(isStepComplete(build({ landingUrl: '  https://pay.kakao.com  ' }), 3), true);
+});
+
+test('http와 형식이 깨진 주소는 등록 전에 막는다', () => {
+  // 심사에서 반려되면 하루가 날아간다. 형식 검사는 사람이 아니라 코드가 한다.
+  assert.equal(isValidLandingUrl('http://pay.kakao.com'), false);
+  assert.equal(isValidLandingUrl('pay.kakao.com'), false);
+  assert.equal(isValidLandingUrl('https://'), false);
+  assert.equal(isValidLandingUrl(''), false);
+  assert.equal(isValidLandingUrl('https://pay.kakao.com'), true);
 });
 
 // ── 미리보기 이미지 출처 ─────────────────────────────────────────

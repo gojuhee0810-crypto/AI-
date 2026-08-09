@@ -14,10 +14,14 @@ import { useId, useRef, useState } from 'react';
 import {
   BADGE_STYLES,
   BADGE_TEXT_LIMIT,
+  IMAGE_STYLE_LABEL,
+  IMAGE_TYPE_LABEL,
   type AiBannerFlowState,
   type BadgeStyle,
   type ImageSourceType,
 } from '@/types/banner-flow';
+import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
+import { CHIP_BASE } from '@/components/ai-banner/chip';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
 import type {
@@ -34,16 +38,9 @@ interface Props {
   onRequireMaterialName: () => void;
 }
 
-const IMAGE_TYPES: Array<{ value: ImageSourceType; label: string }> = [
-  { value: 'graphic', label: '그래픽 아이콘' },
-  { value: 'product', label: '제품 이미지' },
-];
-
-const STYLE_LABEL: Record<ImageStyleKey, string> = {
-  'style-1-3d-basic': '3D 아이콘',
-  'style-2-2d-flat': '2D 아이콘',
-};
-
+// 문구는 banner-flow.ts가 갖고 있다 — 3단계 확인 화면이 같은 이름을 써야 한다.
+// 여기엔 화면에 놓는 순서만 남긴다.
+const IMAGE_TYPE_ORDER: ImageSourceType[] = ['graphic', 'product'];
 const STYLE_ORDER: ImageStyleKey[] = ['style-1-3d-basic', 'style-2-2d-flat'];
 
 const ACCENT_OPTIONS = [
@@ -215,11 +212,11 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
           <InfoTooltip text="아이콘은 AI가 자동생성하고 제품 이미지는 업로드 해주세요" />
         </div>
         <div className="flex flex-col gap-2">
-          {IMAGE_TYPES.map((opt) => (
+          {IMAGE_TYPE_ORDER.map((value) => (
             // 선택 표시는 라디오 하나로만 한다. 테두리 색까지 같이 바뀌면 인풋 포커스와
             // 뒤섞여 오히려 무엇이 선택된 건지 흐려진다. 호버는 연한 회색 배경만.
             <label
-              key={opt.value}
+              key={value}
               className={`flex h-12 items-center gap-2 rounded-lg border border-line bg-surface px-4 transition-colors duration-150 hover:bg-sidebar ${
                 hasMaterialName ? 'cursor-pointer' : 'cursor-not-allowed'
               }`}
@@ -227,18 +224,18 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
               <input
                 type="radio"
                 name="imageType"
-                value={opt.value}
-                checked={state.imageType === opt.value}
-                onChange={() => handleImageTypeChange(opt.value)}
+                value={value}
+                checked={state.imageType === value}
+                onChange={() => handleImageTypeChange(value)}
                 className="sr-only"
               />
-              <Radio checked={state.imageType === opt.value} />
+              <Radio checked={state.imageType === value} />
               <span
                 className={`text-[16px] leading-[26px] ${
                   hasMaterialName ? 'text-ink' : 'text-ink-faint'
                 }`}
               >
-                {opt.label}
+                {IMAGE_TYPE_LABEL[value]}
               </span>
             </label>
           ))}
@@ -341,7 +338,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                             image ? 'text-ink' : 'text-ink-faint'
                           }`}
                         >
-                          {STYLE_LABEL[style]}
+                          {IMAGE_STYLE_LABEL[style]}
                         </span>
                         {isSelected && (
                           <span className="ml-auto text-[13px] leading-[20px] font-medium text-ink">
@@ -354,12 +351,11 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                         <Shimmer className="h-[132px] w-full rounded-lg" />
                       ) : image ? (
                         <>
-                          {/* 투명 PNG라 흰 배경에선 경계가 안 보인다 — 체커보드를 깐다 */}
-                          <div className="checkerboard flex h-[132px] w-full items-center justify-center overflow-hidden rounded-lg">
+                          <div className="flex h-[132px] w-full items-center justify-center overflow-hidden rounded-lg">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={image.imageUrl}
-                              alt={STYLE_LABEL[style]}
+                              alt={IMAGE_STYLE_LABEL[style]}
                               className="max-h-full max-w-full object-contain transition-transform duration-200 group-hover:scale-105"
                             />
                           </div>
@@ -372,7 +368,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                             }}
                             // 카드에 마우스를 올리면 이 버튼만 옐로우로 바뀐다 —
                             // 카드 배경을 물들이지 않고 눌러야 할 곳만 알린다.
-                            className="min-h-8 self-center rounded-[24px] border border-line bg-fill px-3 text-[13px] leading-[20px] font-medium text-ink-muted transition-[background-color,border-color,color,scale] duration-150 group-hover:border-transparent group-hover:bg-brand group-hover:text-ink active:scale-[0.96] disabled:cursor-not-allowed"
+                            className={`${CHIP_BASE} self-center border border-line bg-fill text-ink-muted group-hover:border-transparent group-hover:bg-brand group-hover:text-ink disabled:cursor-not-allowed`}
                           >
                             다시 생성하기
                           </button>
@@ -393,7 +389,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                 key={err.style}
                 className="rounded-lg bg-[#fff4f4] px-4 py-3 text-[14px] leading-[22px] text-pretty text-required"
               >
-                {STYLE_LABEL[err.style]} 생성 실패 — {err.message}
+                {IMAGE_STYLE_LABEL[err.style]} 생성 실패 — {err.message}
               </p>
             ))}
           </section>
@@ -478,25 +474,35 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
           ))}
         </div>
 
-        {/* 혜택 배지 — 문구와 색을 정한다. 미리보기에 바로 반영된다. */}
+        {/* 혜택 배지 — 이미지 좌측 하단에 얹히는 그래픽이다. 모양은 고정이고
+            사용자가 정하는 건 안에 들어갈 문구와 색 둘뿐이다. */}
         {state.accentType === 'badge' && (
           <div className="flex flex-col gap-4 rounded-lg border border-line p-5">
-            <div>
-              <label htmlFor={badgeTextId} className="text-[14px] leading-[22px] text-ink">
-                배지 문구
-              </label>
-              <input
-                id={badgeTextId}
-                type="text"
-                maxLength={BADGE_TEXT_LIMIT}
-                placeholder="예) 최대 50%"
-                value={state.badgeText}
-                onChange={(e) => patch({ badgeText: e.target.value })}
-                className="mt-2 h-11 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+            <div className="flex items-start gap-5">
+              {/* 만들어지는 배지를 그대로 보여준다 — 색 이름만 나열하면
+                  실제로 어떤 그래픽이 붙는지 상상해야 한다. */}
+              <BenefitBadge
+                text={state.badgeText || '5%'}
+                style={state.badgeStyle}
+                className="mt-1 size-20 shrink-0"
               />
-              <p className="mt-1.5 px-4 text-right text-[12px] leading-[19px] tabular-nums text-ink-muted">
-                {state.badgeText.length}/{BADGE_TEXT_LIMIT}
-              </p>
+              <div className="min-w-0 flex-1">
+                <label htmlFor={badgeTextId} className="text-[14px] leading-[22px] text-ink">
+                  배지 문구
+                </label>
+                <input
+                  id={badgeTextId}
+                  type="text"
+                  maxLength={BADGE_TEXT_LIMIT}
+                  placeholder="예) 5% 할인"
+                  value={state.badgeText}
+                  onChange={(e) => patch({ badgeText: e.target.value })}
+                  className="mt-2 h-11 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+                />
+                <p className="mt-1.5 px-4 text-right text-[12px] leading-[19px] tabular-nums text-ink-muted">
+                  {state.badgeText.length}/{BADGE_TEXT_LIMIT}
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col gap-2">
@@ -516,10 +522,9 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                     >
                       <span
                         aria-hidden
-                        className={`rounded-full px-2 py-0.5 text-[12px] leading-[19px] font-medium ${BADGE_STYLES[key].className}`}
-                      >
-                        {state.badgeText.trim() || '배지'}
-                      </span>
+                        className="size-4 shrink-0 rounded-full"
+                        style={{ backgroundColor: BADGE_STYLES[key].fill }}
+                      />
                       <span className="text-[13px] leading-[20px] text-ink-muted">
                         {BADGE_STYLES[key].label}
                       </span>
@@ -544,7 +549,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
             <div className="flex items-center justify-between gap-4 rounded-lg border border-line px-5 py-4">
               <div className="flex min-w-0 items-center gap-4">
                 {state.logoUrl && (
-                  <span className="checkerboard flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+                  <span className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={state.logoUrl}

@@ -14,7 +14,9 @@ export interface StepDefinition {
 const STEPS: StepDefinition[] = [
   { step: 1, label: '이미지 생성' },
   { step: 2, label: '카피 문구' },
-  { step: 3, label: '최종 선택' },
+  // "최종 선택"이었는데 3단계에서 고르는 게 없어졌다 — 확인하고 등록 정보를
+  // 채우는 자리라 하는 일 그대로 부른다.
+  { step: 3, label: '소재 등록' },
 ];
 
 interface Props {

@@ -21,7 +21,7 @@ import {
 const NEXT_LABEL: Record<1 | 2 | 3, string> = {
   1: '카피 문구 생성하러가기',
   2: '최종 화면 넘어가기',
-  3: '소재 등록하기',
+  3: '등록하고 심사 요청하기',
 };
 
 export default function AiBannerStudioPage() {

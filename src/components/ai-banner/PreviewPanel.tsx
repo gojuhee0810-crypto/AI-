@@ -6,33 +6,18 @@
 // 앱 화면은 이미지가 그리고, 우리는 배너 자리에만 소재를 얹는다 — 손으로 그린
 // 근사치보다 정확하고, 앱 UI가 바뀌어도 이미지만 갈아끼우면 된다.
 
-import {
-  BADGE_STYLES,
-  resolveBannerImageUrl,
-  type AiBannerFlowState,
-} from '@/types/banner-flow';
+import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
+import { resolveBannerImageUrl, type AiBannerFlowState } from '@/types/banner-flow';
 
 /**
- * 목업 이미지(1125×2436) 안에서 Fit 배너가 차지하는 영역의 비율.
- * 픽셀이 아니라 %로 두어야 미리보기 폭이 바뀌어도 위치가 어긋나지 않는다.
- */
-const BANNER_SLOT = {
-  left: '4.3%',
-  top: '62.2%',
-  width: '91.2%',
-  height: '11.3%',
-} as const;
-
-/**
- * 목업에 박혀 있는 "새 피드" 플로팅 버튼을 가리는 자리.
- * 우리 소재와 무관한 앱 UI인데 배너 바로 아래라 시선을 끈다. 이미지에 구워져
- * 있어 지울 수 없으므로 흰 사각형으로 덮는다(그 자리 배경도 흰색이다).
+ * "새 피드" 플로팅 버튼을 덮는 자리 — 하단 목업 이미지(1125×646) 기준 비율.
+ * 원본 절대좌표 x 400~740 / y 2010~2152를 잘라낸 위치로 환산한 값이다.
  */
 const NEW_FEED_PATCH = {
-  left: '34%',
-  top: '80.3%',
-  width: '30%',
-  height: '7.5%',
+  left: '35.6%',
+  top: '34.1%',
+  width: '30.2%',
+  height: '22.0%',
 } as const;
 
 export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
@@ -42,6 +27,7 @@ export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
   const showLogo = state.accentType === 'logo' && Boolean(state.logoUrl);
   const selectedCopy =
     state.selectedCopyIndex !== null ? state.copyRecommendations[state.selectedCopyIndex] : null;
+  const noticeText = state.noticeText.trim();
 
   return (
     <div className="flex flex-col gap-4">
@@ -51,53 +37,49 @@ export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
       {/* 목업 폭은 미리보기 전체가 뷰포트(1440×900 기준) 안에 들어가도록 잡았다.
           이보다 크면 sticky가 무의미해져 스크롤할 때마다 미리보기가 잘린다. */}
       <div className="relative mx-auto w-[280px]">
+        {/* 목업을 배너 자리에서 위·아래로 잘라 배너를 그 사이에 끼운다.
+            통짜 이미지 위에 배너를 얹으면, 심의필이 붙어 배너가 세로로 늘어날 때
+            아래 앱 화면이 안 밀리고 배너에 덮인다 — 실제 앱에서는 밀려 내려간다. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/images/preview/pay-app-mockup.png"
+          src="/images/preview/pay-app-mockup-top.png"
           alt="카카오페이 앱 홈 화면"
-          className="w-full rounded-[24px]"
+          className="w-full rounded-t-[24px]"
         />
 
-        {/* "새 피드" 버튼 가리기 — 배경이 흰색이라 흰 사각형으로 덮으면 자연스럽다 */}
-        <div className="absolute bg-white" style={NEW_FEED_PATCH} aria-hidden />
-
-        {/* 흰색 딤 — 앱 UI를 흐리게 눌러 지금 만드는 소재에 시선이 가게 한다.
-            배너 슬롯은 이 위에 그려서 선명하게 남는다. */}
+        {/* 배너 — 목업의 광고 영역을 대신하고 지금 만드는 소재를 그린다.
+            여백·크기는 목업에 원래 그려져 있던 배너를 잘라 실측한 값이다
+            (원본 1026×275 기준: 좌 74px=7.2%, 우 49px=4.8%).
+            높이는 고정하지 않는다 — 안쪽 여백과 내용이 정한다. aspect-ratio로 묶으면
+            안내 문구가 붙어도 안 늘어나고 잘린다. */}
         <div
-          className="pointer-events-none absolute inset-0 rounded-[24px] bg-white/60"
-          aria-hidden
-        />
-
-        {/* 배너 슬롯 — 목업의 광고 영역을 덮고 지금 만드는 소재를 그린다 */}
-        <div
-          className="absolute flex items-center gap-[3%] overflow-hidden rounded-[14px] bg-[#eceef0] px-[4.5%]"
-          style={BANNER_SLOT}
+          className="relative z-10 ml-[4.3%] flex w-[91.2%] items-center overflow-hidden rounded-lg bg-[#f3f4f5] pr-[4.8%] pl-[7.2%]"
         >
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1">
-              {showBadge && (
-                <span
-                  className={`shrink-0 rounded-full px-1.5 py-px text-[10px] leading-[15px] font-medium ${BADGE_STYLES[state.badgeStyle].className}`}
-                >
-                  {state.badgeText.trim()}
-                </span>
-              )}
-              <span className="truncate text-[11px] leading-[17px] text-[rgba(6,11,17,0.6)]">
-                {selectedCopy?.subtitle || '서브타이틀 입력해주세요'} · AD
-              </span>
+          {/* 세로 여백은 텍스트 쪽에만 준다. 배너 전체에 주면 이미지까지 밀려
+              원본(이미지가 텍스트보다 크다)보다 배너가 두꺼워진다. */}
+          <div className="min-w-0 flex-1 py-[6.5%]">
+            <div className="truncate text-[11px] leading-4 text-[rgba(6,11,17,0.72)]">
+              {selectedCopy?.subtitle || '서브타이틀 입력해주세요'} · AD
             </div>
-            {/* 서브/메인 간격 — 목업 기준 4px */}
-            <div className="mt-1 truncate text-[15px] leading-[22px] font-semibold text-ink">
+            {/* 서브/메인 사이는 마진 없이 줄높이로만 띄운다 — 원본의 두 줄 간격
+                (잉크 기준 30px ≈ 7.5px)이 딱 이 정도다. 마진을 더하면 두 줄이
+                벌어져 한 덩어리로 안 읽힌다. */}
+            <div className="truncate text-[14px] leading-5 font-semibold text-ink">
               {selectedCopy?.maintitle || '메인타이틀 입력해주세요'}
             </div>
-            <div className="mt-1 text-[6px] leading-[9px] text-[rgba(6,11,17,0.28)]">
-              <p>손해보험협회 심의필 제70903 (2022.07.11~2023.02.07)</p>
-              <p>손해보험협회 심의필 제70903 (2022.07.11~2023.02.07)</p>
-            </div>
+            {/* 안내 문구(심의필) — 3단계에서 입력한 만큼만 나온다.
+                고정 문구로 박아두면 안 쓰는 광고주 화면에도 남는다. */}
+            {noticeText && (
+              <p className="mt-1 text-[6px] leading-[9px] whitespace-pre-line text-[rgba(6,11,17,0.4)]">
+                {noticeText}
+              </p>
+            )}
           </div>
 
-          {/* 이미지 영역 — 로고를 쓰면 좌하단에 1/4 크기로 얹는다 */}
-          <div className="relative aspect-square w-[22%] shrink-0 overflow-hidden rounded-lg">
+          {/* 이미지는 폭 기준으로 잡는다 — 안내 문구가 붙어 배너가 세로로 늘어나도
+              이미지까지 같이 커지면 안 된다.
+              로고와 혜택 배지는 둘 다 이미지 좌측 하단에 얹힌다(하나만 고를 수 있다). */}
+          <div className="relative my-[1%] ml-[3%] aspect-square w-[28.5%] shrink-0 self-center rounded-lg">
             {bannerImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={bannerImageUrl} alt="배너 이미지" className="size-full object-contain" />
@@ -109,11 +91,44 @@ export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
               <img
                 src={state.logoUrl ?? ''}
                 alt="브랜드 로고"
-                className="absolute bottom-0 left-0 w-1/4 rounded-[2px] bg-white/90 object-contain"
+                className="absolute bottom-[8%] left-[4%] w-1/4 rounded-[2px] bg-white/90 object-contain"
+              />
+            )}
+            {showBadge && (
+              /* 폭이 이미지 대비 %라, 이미지를 1.5배 키울 때 같이 커지지 않도록
+                 56% → 37%로 함께 줄였다(화면에 보이는 크기는 그대로다).
+                 이미지 안쪽으로 넣는다 — 밖으로 빼면 배너 모서리에 딱 붙어
+                 잘린 것처럼 보인다. 이미지와 겹치는 건 의도한 배치다. */
+              <BenefitBadge
+                text={state.badgeText}
+                style={state.badgeStyle}
+                className="absolute bottom-[8%] left-[4%] w-[37%]"
               />
             )}
           </div>
         </div>
+
+        {/* 배너 아래 화면 — 배너가 늘어나면 이만큼 그대로 밀려 내려간다 */}
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/preview/pay-app-mockup-bottom.png"
+            alt=""
+            aria-hidden
+            className="w-full rounded-b-[24px]"
+          />
+          {/* 목업에 구워진 "새 피드" 플로팅 버튼 가리기. 우리 소재와 무관한 앱 UI인데
+              배너 바로 아래라 시선을 끈다. 알약 바깥으로 넘기면 뒤의 금융일정 카드까지
+              지워지므로 버튼 실측 범위에만 맞춘다. */}
+          <div className="absolute bg-white" style={NEW_FEED_PATCH} aria-hidden />
+        </div>
+
+        {/* 흰색 딤 — 앱 UI를 흐리게 눌러 지금 만드는 소재에 시선이 가게 한다.
+            배너는 z-10으로 이 위에 있어 선명하게 남는다. */}
+        <div
+          className="pointer-events-none absolute inset-0 rounded-[24px] bg-white/60"
+          aria-hidden
+        />
       </div>
 
       <p className="text-center text-[14px] leading-[22px] text-ink-muted">
