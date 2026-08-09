@@ -59,6 +59,8 @@ const PROGRESS_MESSAGES = [
 ];
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+/** 로고는 매체 가이드상 1MB 이하 (docs/guides/admin-design-system.md) */
+const MAX_LOGO_BYTES = 1024 * 1024;
 
 /** ⓘ 아이콘에 마우스를 올리거나 포커스하면 뜨는 검정 말풍선. */
 function InfoTooltip({ text }: { text: string }) {
@@ -114,7 +116,9 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
   const objectId = useId();
   const badgeTextId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
 
   const hasMaterialName = state.materialName.trim().length > 0;
   const isGraphic = state.imageType === 'graphic';
@@ -152,6 +156,28 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
     const reader = new FileReader();
     reader.onload = () => patch({ productImageUrl: String(reader.result) });
     reader.onerror = () => setUploadError('파일을 읽지 못했어요. 다시 시도해주세요.');
+    reader.readAsDataURL(file);
+  }
+
+  function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    // 로고는 배너 위에 겹쳐지므로 배경이 투명해야 한다 — PNG만 받는다.
+    if (file.type !== 'image/png') {
+      setLogoError('로고는 배경이 투명한 PNG만 올릴 수 있어요.');
+      return;
+    }
+    if (file.size > MAX_LOGO_BYTES) {
+      setLogoError('1MB 이하 파일만 올릴 수 있어요.');
+      return;
+    }
+
+    setLogoError(null);
+    const reader = new FileReader();
+    reader.onload = () => patch({ logoUrl: String(reader.result) });
+    reader.onerror = () => setLogoError('파일을 읽지 못했어요. 다시 시도해주세요.');
     reader.readAsDataURL(file);
   }
 
@@ -538,30 +564,57 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
           </div>
         )}
 
-        {/* 로고 업로드 */}
+        {/* 로고 업로드 — 배너 이미지 좌하단에 1/4 크기로 얹힌다 */}
         {state.accentType === 'logo' && (
-          <div className="flex items-center justify-between rounded-lg border border-line px-5 py-4">
-            <ul className="flex flex-col gap-0.5">
-              {['파일 형식 : PNG', '용량 : 1MB 이하', '1371 x 1218px'].map((spec) => (
-                <li
-                  key={spec}
-                  className="flex items-start gap-2 text-[14px] leading-[22px] text-ink"
-                >
-                  <span aria-hidden className="pt-2 text-[6px] leading-none">
-                    ●
+          <div className="flex flex-col gap-3">
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/png"
+              onChange={handleLogoChange}
+              className="sr-only"
+            />
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-line px-5 py-4">
+              <div className="flex min-w-0 items-center gap-4">
+                {state.logoUrl && (
+                  <span className="checkerboard flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={state.logoUrl}
+                      alt="업로드한 로고"
+                      className="max-h-full max-w-full object-contain"
+                    />
                   </span>
-                  {spec}
-                </li>
-              ))}
-            </ul>
-            <button
-              type="button"
-              disabled
-              title="로고 업로드는 아직 준비 중입니다"
-              className="flex h-9 shrink-0 items-center gap-1 rounded-[24px] bg-fill-strong px-3.5 text-[14px] leading-[22px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <span aria-hidden>+</span> 로고 업로드
-            </button>
+                )}
+                <ul className="flex flex-col gap-0.5">
+                  {['파일 형식 : PNG', '용량 : 1MB 이하', '1371 x 1218px'].map((spec) => (
+                    <li
+                      key={spec}
+                      className="flex items-start gap-2 text-[14px] leading-[22px] text-ink"
+                    >
+                      <span aria-hidden className="pt-2 text-[6px] leading-none">
+                        ●
+                      </span>
+                      {spec}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                className="flex h-9 shrink-0 items-center gap-1 rounded-[24px] bg-fill-strong px-3.5 text-[14px] leading-[22px] font-medium text-white transition-[background-color,scale] duration-150 hover:bg-[#4e5760] active:scale-[0.96]"
+              >
+                <span aria-hidden>+</span> {state.logoUrl ? '로고 변경' : '로고 업로드'}
+              </button>
+            </div>
+            {logoError ? (
+              <p className="text-[14px] leading-[22px] text-required">{logoError}</p>
+            ) : (
+              <p className="text-[14px] leading-[22px] text-ink-muted">
+                로고는 배너 이미지 좌측 하단에 1/4 크기로 붙습니다
+              </p>
+            )}
           </div>
         )}
       </section>

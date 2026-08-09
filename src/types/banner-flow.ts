@@ -36,6 +36,8 @@ export interface AiBannerFlowState {
   /** accentType이 'badge'일 때 배너에 얹을 문구 (8자) */
   badgeText: string;
   badgeStyle: BadgeStyle;
+  /** accentType이 'logo'일 때 올린 로고 (data URL). 배너 이미지 좌하단에 1/4 크기로 얹는다. */
+  logoUrl: string | null;
   images: GeneratedImage[];
   /** 생성된 2종 중 실제로 쓸 스타일 */
   selectedImageStyle: ImageStyleKey | null;
@@ -58,6 +60,7 @@ export const INITIAL_FLOW_STATE: AiBannerFlowState = {
   accentType: 'none',
   badgeText: '',
   badgeStyle: 'brand',
+  logoUrl: null,
   images: [],
   selectedImageStyle: null,
   partialErrors: [],

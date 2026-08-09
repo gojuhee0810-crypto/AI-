@@ -65,13 +65,13 @@ export default function AiBannerStudioPage() {
     // 완료한 단계로만 되돌아갈 수 있다. 앞 단계 건너뛰기는 막는다.
     <AdStudioShell currentStep={state.step} onStepSelect={(step) => patch({ step })}>
       <div className="flex min-h-full flex-col">
-        <div className="px-12 pt-10">
+        <div className="px-8 pt-8">
           <h1 className="text-[32px] leading-[45px] font-medium tracking-[-0.4px] text-ink">
             AI 광고 소재 만들기
           </h1>
 
           {/* 앞 단계에서 정해져 넘어온 캠페인·광고그룹 — 지금은 표시 전용 */}
-          <div className="mt-6 flex items-center gap-10">
+          <div className="mt-4 flex items-center gap-10">
             {[
               { badge: '캠페인', name: '일이삼사오육칠팔구십일이삼사오육칠팔구십' },
               { badge: '광고그룹', name: '일이삼사오육칠팔구십일이삼사오육칠팔구십' },
@@ -87,7 +87,7 @@ export default function AiBannerStudioPage() {
           {/* 소재 이름은 구분선 위(미리보기 영역 밖)에 온다 — Figma 1211:3115 기준.
               카피·최종 단계에는 없고 1단계에서만 노출된다. */}
           {state.step === 1 && (
-            <div className="mt-10 max-w-[523px]">
+            <div className="mt-6 max-w-[523px]">
               <label
                 htmlFor="materialName"
                 className="text-[18px] leading-7 font-medium text-ink"
@@ -131,22 +131,22 @@ export default function AiBannerStudioPage() {
 
         {/* 본문: 좌 폼 / 우 미리보기 — 미리보기 우측 배치는 확정 요구사항.
             미리보기는 스크롤을 따라오도록 헤더 아래에 붙인다. */}
+        {/* 좌우 5:5. 이전엔 폼을 523px로 묶어둬서 1440 화면에서 좌측이 남고
+            그만큼 세로로 길어졌다 — 폭 제한을 풀어 스크롤을 줄인다. */}
         <div className="flex flex-1 items-stretch">
-          <div className="min-w-0 flex-1 px-12 py-10">
-            <div className="max-w-[523px]">
-              {state.step === 1 && (
-                <Step1ImagePanel
-                  state={state}
-                  patch={patch}
-                  onRequireMaterialName={handleRequireMaterialName}
-                />
-              )}
-              {state.step === 2 && <Step2CopyPanel state={state} patch={patch} />}
-              {state.step === 3 && <Step3ReviewPanel state={state} patch={patch} />}
-            </div>
+          <div className="min-w-0 flex-1 px-8 py-8">
+            {state.step === 1 && (
+              <Step1ImagePanel
+                state={state}
+                patch={patch}
+                onRequireMaterialName={handleRequireMaterialName}
+              />
+            )}
+            {state.step === 2 && <Step2CopyPanel state={state} patch={patch} />}
+            {state.step === 3 && <Step3ReviewPanel state={state} patch={patch} />}
           </div>
-          <aside className="w-[530px] shrink-0 border-l border-line bg-sidebar px-12 py-10">
-            <div className="sticky top-[124px]">
+          <aside className="min-w-0 flex-1 border-l border-line bg-sidebar px-8 py-8">
+            <div className="sticky top-[108px]">
               <PreviewPanel state={state} />
             </div>
           </aside>
