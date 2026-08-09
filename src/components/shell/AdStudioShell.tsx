@@ -59,24 +59,30 @@ export function AdStudioShell({ currentStep, onStepSelect, children }: Props) {
             </div>
           </div>
 
-          <div className="mx-auto my-[35px] h-px w-[190px] bg-line" />
+          <div className="mx-auto my-6 h-px w-[190px] bg-line" />
 
-          <nav className="flex flex-col">
-            <div className="px-[30px] py-[9px]">
-              <span className="text-[22px] leading-[30px] font-medium text-ink">광고 관리</span>
+          {/* 트리: 광고 관리 > 소재 > AI 광고 배너 > 1·2·3 단계 */}
+          <nav className="flex flex-col gap-1 px-[30px]">
+            <div className="py-1.5">
+              <span className="text-[16px] leading-[26px] text-ink-muted">광고 관리</span>
             </div>
 
-            <div className="py-[9px] pr-11 pl-[50px]">
-              <span className="text-[22px] leading-[30px] font-medium text-ink">
+            <div className="py-1.5 pl-3">
+              <span className="text-[17px] leading-[26px] font-semibold text-ink">소재</span>
+            </div>
+
+            <div className="ml-3 rounded-lg bg-fill px-4 py-2.5">
+              <span className="text-[17px] leading-[26px] font-semibold text-ink">
                 AI 광고 배너
               </span>
             </div>
-            <div className="pb-2">
+
+            <div className="mt-1">
               <StepIndicator currentStep={currentStep} onStepSelect={onStepSelect} />
             </div>
 
-            <div className="px-[30px] py-[9px]">
-              <span className="text-[22px] leading-[30px] text-ink-muted">광고계정 관리</span>
+            <div className="mt-3 py-1.5">
+              <span className="text-[16px] leading-[26px] text-ink-muted">광고계정 관리</span>
             </div>
           </nav>
 

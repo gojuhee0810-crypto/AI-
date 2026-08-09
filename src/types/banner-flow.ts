@@ -12,7 +12,10 @@ export interface AiBannerFlowState {
   step: 1 | 2 | 3;
   /** 광고센터에 등록될 소재 이름 (25자) */
   materialName: string;
-  imageType: ImageSourceType;
+  /** null = 아직 안 고름. 소재 이름을 먼저 입력해야 고를 수 있다. */
+  imageType: ImageSourceType | null;
+  /** imageType이 'product'일 때 사용자가 올린 이미지 (data URL) */
+  productImageUrl: string | null;
   primaryObject: string;
   accentType: 'logo' | 'badge' | 'none';
   images: GeneratedImage[];
@@ -31,7 +34,8 @@ export interface AiBannerFlowState {
 export const INITIAL_FLOW_STATE: AiBannerFlowState = {
   step: 1,
   materialName: '',
-  imageType: 'graphic',
+  imageType: null,
+  productImageUrl: null,
   primaryObject: '',
   accentType: 'none',
   images: [],

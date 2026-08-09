@@ -1,13 +1,16 @@
 'use client';
 
 // Design Ref: Figma 1211:3115 — 이미지 생성 화면.
-// 위에서 아래로: 이미지 유형 → 오브젝트 명칭 → 생성 버튼 → AI 이미지 생성(결과 선택)
-// → 배너 강조 요소 → 로고 업로드.
+// 위에서 아래로: 이미지 유형 → (그래픽) 오브젝트 명칭·생성 → AI 이미지 생성(결과 선택)
+//                          → (제품) 업로드
+//              → 배너 강조 요소 → 로고 업로드
 // (소재 이름은 구분선 위 헤더 영역에 있어 page.tsx가 그린다)
 //
-// 2026-08-08: Figma 실측값으로 전면 재구성. 이미지는 2종(3D/2D)이다.
+// 2026-08-08: 입력 순서를 강제한다. 소재 이름을 적기 전에는 이미지 유형을 고를 수 없고,
+// 시도하면 소재 이름 필드에 에러가 뜬다 — 아무 값도 없는 상태로 진행하다 마지막에
+// 막히는 것보다 첫 필드에서 막히는 편이 낫다.
 
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { AiBannerFlowState, ImageSourceType } from '@/types/banner-flow';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import type {
@@ -20,6 +23,8 @@ import type {
 interface Props {
   state: AiBannerFlowState;
   patch: (next: Partial<AiBannerFlowState>) => void;
+  /** 소재 이름이 비어 있을 때 호출 — page.tsx가 에러를 띄우고 포커스를 옮긴다. */
+  onRequireMaterialName: () => void;
 }
 
 const IMAGE_TYPES: Array<{ value: ImageSourceType; label: string }> = [
@@ -35,9 +40,9 @@ const STYLE_LABEL: Record<ImageStyleKey, string> = {
 const STYLE_ORDER: ImageStyleKey[] = ['style-1-3d-basic', 'style-2-2d-flat'];
 
 const ACCENT_OPTIONS = [
-  { value: 'logo', label: '로고', hasInfo: true },
-  { value: 'badge', label: '혜택 배지', hasInfo: true },
-  { value: 'none', label: '없음', hasInfo: false },
+  { value: 'logo', label: '로고', info: '브랜드 로고를 배너 우측에 함께 노출해요' },
+  { value: 'badge', label: '혜택 배지', info: '혜택을 강조하는 배지를 배너에 함께 노출해요' },
+  { value: 'none', label: '없음', info: null },
 ] as const;
 
 const PROGRESS_MESSAGES = [
@@ -46,6 +51,8 @@ const PROGRESS_MESSAGES = [
   '2D 아이콘을 그리는 중이에요',
   '배경을 정리하고 마무리하는 중이에요',
 ];
+
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 /** ⓘ 아이콘에 마우스를 올리거나 포커스하면 뜨는 검정 말풍선. */
 function InfoTooltip({ text }: { text: string }) {
@@ -75,13 +82,13 @@ function InfoTooltip({ text }: { text: string }) {
   );
 }
 
-/** Figma 라디오: 24px 원, 선택 시 검정 테두리 + 검정 점. */
+/** 라디오 24px. 선택하면 브랜드 옐로우로 채운다(디자인 시스템 §6-3). */
 function Radio({ checked }: { checked: boolean }) {
   return (
     <span
       aria-hidden
-      className={`flex size-6 shrink-0 items-center justify-center rounded-full border ${
-        checked ? 'border-ink' : 'border-line'
+      className={`flex size-6 shrink-0 items-center justify-center rounded-full border transition-colors duration-150 ${
+        checked ? 'border-brand bg-brand' : 'border-line bg-surface'
       }`}
     >
       {checked && <span className="size-2.5 rounded-full bg-ink" />}
@@ -97,14 +104,49 @@ function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?
   );
 }
 
-export function Step1ImagePanel({ state, patch }: Props) {
+export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) {
   const objectId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const hasMaterialName = state.materialName.trim().length > 0;
   const isGraphic = state.imageType === 'graphic';
+  const isProduct = state.imageType === 'product';
   const hasInput = state.primaryObject.trim().length > 0;
   const hasResult = state.images.length > 0;
   // 지금 눌러야 진행되는 버튼만 브랜드 컬러. 결과가 나오면 주요 액션이
   // 하단 "카피 문구 생성하러가기"로 넘어가므로 회색으로 내린다.
   const isPrimaryAction = isGraphic && hasInput && !state.isGeneratingImages && !hasResult;
+
+  function handleImageTypeChange(value: ImageSourceType) {
+    // 소재 이름이 먼저다. 없으면 고르지 못하게 하고 그쪽으로 안내한다.
+    if (!hasMaterialName) {
+      onRequireMaterialName();
+      return;
+    }
+    patch({ imageType: value });
+  }
+
+  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ''; // 같은 파일을 다시 골라도 change가 걸리도록
+    if (!file) return;
+
+    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+      setUploadError('PNG 또는 JPG 파일만 올릴 수 있어요.');
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setUploadError('5MB 이하 파일만 올릴 수 있어요.');
+      return;
+    }
+
+    setUploadError(null);
+    const reader = new FileReader();
+    reader.onload = () => patch({ productImageUrl: String(reader.result) });
+    reader.onerror = () => setUploadError('파일을 읽지 못했어요. 다시 시도해주세요.');
+    reader.readAsDataURL(file);
+  }
 
   async function callGenerate(body: GenerateImageRequest) {
     const res = await fetch('/api/generate-image', {
@@ -170,140 +212,195 @@ export function Step1ImagePanel({ state, patch }: Props) {
           {IMAGE_TYPES.map((opt) => (
             <label
               key={opt.value}
-              className={`flex h-12 cursor-pointer items-center gap-2 rounded-lg border px-4 transition-colors duration-150 ${
-                state.imageType === opt.value ? 'border-ink' : 'border-line hover:border-ink-muted'
-              }`}
+              className={`flex h-12 items-center gap-2 rounded-lg border px-4 transition-colors duration-150 ${
+                state.imageType === opt.value
+                  ? 'border-ink'
+                  : 'border-line hover:border-ink-muted'
+              } ${hasMaterialName ? 'cursor-pointer' : 'cursor-not-allowed'}`}
             >
               <input
                 type="radio"
                 name="imageType"
                 value={opt.value}
                 checked={state.imageType === opt.value}
-                onChange={() => patch({ imageType: opt.value })}
+                onChange={() => handleImageTypeChange(opt.value)}
                 className="sr-only"
               />
               <Radio checked={state.imageType === opt.value} />
-              <span className="text-[16px] leading-[26px] text-ink">{opt.label}</span>
+              <span
+                className={`text-[16px] leading-[26px] ${
+                  hasMaterialName ? 'text-ink' : 'text-ink-faint'
+                }`}
+              >
+                {opt.label}
+              </span>
             </label>
           ))}
         </div>
-        {!isGraphic && (
-          <p className="text-[14px] leading-[22px] text-ink-muted">
-            제품 이미지 업로드는 아직 준비 중이에요.
-          </p>
-        )}
       </section>
 
-      {/* 오브젝트 명칭 */}
-      <section className="flex flex-col gap-3">
-        <FieldLabel htmlFor={objectId}>오브젝트 명칭</FieldLabel>
-        <div>
-          <input
-            id={objectId}
-            type="text"
-            maxLength={15}
-            disabled={!isGraphic}
-            placeholder="생성하고 싶은 오브젝트를 입력해주세요"
-            value={state.primaryObject}
-            onChange={(e) => patch({ primaryObject: e.target.value })}
-            className="h-12 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink disabled:bg-fill"
-          />
-          <p className="mt-1.5 px-4 text-right text-[12px] leading-[19px] tabular-nums text-ink">
-            {state.primaryObject.length}/15
-          </p>
-        </div>
+      {/* 그래픽 아이콘 — 오브젝트 입력 + AI 생성 */}
+      {isGraphic && (
+        <>
+          <section className="flex flex-col gap-3">
+            <FieldLabel htmlFor={objectId}>오브젝트 명칭</FieldLabel>
+            <div>
+              <input
+                id={objectId}
+                type="text"
+                maxLength={15}
+                placeholder="생성하고 싶은 오브젝트를 입력해주세요"
+                value={state.primaryObject}
+                onChange={(e) => patch({ primaryObject: e.target.value })}
+                className="h-12 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+              />
+              <p className="mt-1.5 px-4 text-right text-[12px] leading-[19px] tabular-nums text-ink">
+                {state.primaryObject.length}/15
+              </p>
+            </div>
 
-        <button
-          type="button"
-          disabled={!hasInput || !isGraphic || state.isGeneratingImages}
-          onClick={handleGenerate}
-          className={`flex h-12 w-full items-center justify-center gap-2 rounded-[24px] border text-[16px] leading-[26px] font-medium transition-[background-color,scale] duration-150 enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-muted ${
-            isPrimaryAction
-              ? 'border-transparent bg-brand text-ink enabled:hover:bg-[#f2df00]'
-              : 'border-black/[0.06] bg-[#f0f0f0] text-ink enabled:hover:bg-[#e9e9e9]'
-          }`}
-        >
-          <span aria-hidden>✦</span>
-          {state.isGeneratingImages ? '생성 중…' : 'AI 이미지 2종 생성하기'}
-        </button>
-      </section>
+            <button
+              type="button"
+              disabled={!hasInput || state.isGeneratingImages}
+              onClick={handleGenerate}
+              className={`flex h-12 w-full items-center justify-center gap-2 rounded-[24px] border text-[16px] leading-[26px] font-medium transition-[background-color,scale] duration-150 enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-muted ${
+                isPrimaryAction
+                  ? 'border-transparent bg-brand text-ink enabled:hover:bg-[#f2df00]'
+                  : 'border-black/[0.06] bg-[#f0f0f0] text-ink enabled:hover:bg-[#e9e9e9]'
+              }`}
+            >
+              <span aria-hidden>✦</span>
+              {state.isGeneratingImages ? '생성 중…' : 'AI 이미지 2종 생성하기'}
+            </button>
+          </section>
 
-      {/* AI 이미지 생성 — 결과 선택 */}
-      <section className="flex flex-col gap-3">
-        <h3 className="text-[18px] leading-7 font-medium text-ink">AI 이미지 생성</h3>
+          {/* AI 이미지 생성 — 결과 선택 */}
+          <section className="flex flex-col gap-3">
+            <h3 className="text-[18px] leading-7 font-medium text-ink">AI 이미지 생성</h3>
 
-        {state.isGeneratingImages && <ProgressStatus messages={PROGRESS_MESSAGES} />}
+            {state.isGeneratingImages && <ProgressStatus messages={PROGRESS_MESSAGES} />}
 
-        <div className="rounded-lg border border-line p-5">
-          <div className="grid grid-cols-2 gap-4">
-            {STYLE_ORDER.map((style) => {
-              const image = state.images.find((img) => img.style === style);
-              const isRegenerating = state.regeneratingStyle === style;
-              const isSelected = state.selectedImageStyle === style;
-              return (
-                <div key={style} className="flex flex-col gap-3">
-                  <label
-                    className={`flex items-center gap-2 ${
-                      image ? 'cursor-pointer' : 'cursor-default'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="selectedImageStyle"
-                      value={style}
-                      checked={isSelected}
-                      disabled={!image}
-                      onChange={() => patch({ selectedImageStyle: style })}
-                      className="sr-only"
-                    />
-                    <Radio checked={isSelected} />
-                    <span
-                      className={`text-[16px] leading-[26px] ${
-                        image ? 'text-ink' : 'text-ink-faint'
-                      }`}
-                    >
-                      {STYLE_LABEL[style]}
-                    </span>
-                  </label>
-
-                  {state.isGeneratingImages || isRegenerating ? (
-                    <Shimmer className="h-[120px] w-full rounded-lg" />
-                  ) : image ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="flex h-[120px] w-full items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={image.imageUrl}
-                          alt={STYLE_LABEL[style]}
-                          className="max-h-full max-w-full object-contain"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRegenerate(style)}
-                        className="min-h-9 rounded-[24px] border border-line px-3 text-[14px] leading-[22px] text-ink transition-[background-color,scale] duration-150 hover:bg-fill active:scale-[0.96]"
+            <div className="rounded-lg border border-line p-5">
+              <div className="grid grid-cols-2 gap-4">
+                {STYLE_ORDER.map((style) => {
+                  const image = state.images.find((img) => img.style === style);
+                  const isRegenerating = state.regeneratingStyle === style;
+                  const isSelected = state.selectedImageStyle === style;
+                  return (
+                    <div key={style} className="flex flex-col gap-3">
+                      <label
+                        className={`flex items-center gap-2 ${
+                          image ? 'cursor-pointer' : 'cursor-default'
+                        }`}
                       >
-                        다시 생성하기
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="h-[120px]" aria-hidden />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                        <input
+                          type="radio"
+                          name="selectedImageStyle"
+                          value={style}
+                          checked={isSelected}
+                          disabled={!image}
+                          onChange={() => patch({ selectedImageStyle: style })}
+                          className="sr-only"
+                        />
+                        <Radio checked={isSelected} />
+                        <span
+                          className={`text-[16px] leading-[26px] ${
+                            image ? 'text-ink' : 'text-ink-faint'
+                          }`}
+                        >
+                          {STYLE_LABEL[style]}
+                        </span>
+                      </label>
 
-        {state.partialErrors.map((err) => (
-          <p
-            key={err.style}
-            className="rounded-lg bg-[#fff4f4] px-4 py-3 text-[14px] leading-[22px] text-pretty text-required"
+                      {state.isGeneratingImages || isRegenerating ? (
+                        <Shimmer className="h-[120px] w-full rounded-lg" />
+                      ) : image ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex h-[120px] w-full items-center justify-center">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={image.imageUrl}
+                              alt={STYLE_LABEL[style]}
+                              className="max-h-full max-w-full object-contain"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRegenerate(style)}
+                            className="min-h-8 rounded-[24px] border border-line px-3 text-[13px] leading-[20px] font-medium text-ink-muted transition-[background-color,scale] duration-150 hover:bg-fill hover:text-ink active:scale-[0.96]"
+                          >
+                            다시 생성하기
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="h-[120px]" aria-hidden />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {state.partialErrors.map((err) => (
+              <p
+                key={err.style}
+                className="rounded-lg bg-[#fff4f4] px-4 py-3 text-[14px] leading-[22px] text-pretty text-required"
+              >
+                {STYLE_LABEL[err.style]} 생성 실패 — {err.message}
+              </p>
+            ))}
+          </section>
+        </>
+      )}
+
+      {/* 제품 이미지 — 직접 업로드 */}
+      {isProduct && (
+        <section className="flex flex-col gap-3">
+          <FieldLabel>제품 이미지 업로드</FieldLabel>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png,image/jpeg"
+            onChange={handleFileChange}
+            className="sr-only"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex min-h-[220px] w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-line bg-sidebar p-6 transition-colors duration-150 hover:border-ink-muted"
           >
-            {STYLE_LABEL[err.style]} 생성 실패 — {err.message}
-          </p>
-        ))}
-      </section>
+            {state.productImageUrl ? (
+              <>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={state.productImageUrl}
+                  alt="업로드한 제품 이미지"
+                  className="max-h-[150px] max-w-full object-contain"
+                />
+                <span className="text-[14px] leading-[22px] text-ink-muted">
+                  클릭하면 다른 이미지로 바꿔요
+                </span>
+              </>
+            ) : (
+              <>
+                <span
+                  aria-hidden
+                  className="flex size-16 items-center justify-center rounded-full bg-surface text-[22px] text-ink shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+                >
+                  ⬆
+                </span>
+                <span className="text-[16px] leading-[26px] text-ink">클릭하여 이미지 업로드</span>
+                <span className="text-[14px] leading-[22px] text-ink-muted">
+                  PNG, JPG (최대 5MB)
+                </span>
+              </>
+            )}
+          </button>
+          {uploadError && (
+            <p className="text-[14px] leading-[22px] text-required">{uploadError}</p>
+          )}
+        </section>
+      )}
 
       {/* 배너 강조 요소 추가 */}
       <section className="flex flex-col gap-3">
@@ -329,15 +426,7 @@ export function Step1ImagePanel({ state, patch }: Props) {
                 <Radio checked={state.accentType === opt.value} />
                 <span className="text-[16px] leading-[26px] text-ink">{opt.label}</span>
               </label>
-              {opt.hasInfo && (
-                <InfoTooltip
-                  text={
-                    opt.value === 'logo'
-                      ? '브랜드 로고를 배너 우측에 함께 노출해요'
-                      : '혜택을 강조하는 배지를 배너에 함께 노출해요'
-                  }
-                />
-              )}
+              {opt.info && <InfoTooltip text={opt.info} />}
             </div>
           ))}
         </div>

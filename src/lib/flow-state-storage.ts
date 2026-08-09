@@ -86,8 +86,16 @@ export function saveFlowState(state: AiBannerFlowState): void {
   try {
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(toPersisted(state)));
   } catch {
-    // 용량 초과(QuotaExceededError)나 프라이빗 모드에서 실패할 수 있다.
-    // 저장은 어디까지나 보조 장치라, 실패해도 작업 자체는 계속되어야 한다.
+    // 대개 용량 초과다. 업로드한 제품 이미지가 base64로 수 MB까지 커질 수 있는데,
+    // 그것 때문에 나머지(소재 이름·카피·선택)까지 통째로 못 남기면 손해가 크다.
+    // 이미지만 빼고 한 번 더 시도한다 — 이미지는 다시 올릴 수 있지만
+    // 40초 걸려 만든 카피는 그렇지 않다.
+    try {
+      const withoutUpload = toPersisted({ ...state, productImageUrl: null });
+      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(withoutUpload));
+    } catch {
+      // 프라이빗 모드 등으로 아예 못 쓰는 경우. 저장은 보조 장치라 조용히 넘어간다.
+    }
   }
 }
 

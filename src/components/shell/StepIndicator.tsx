@@ -1,11 +1,10 @@
 'use client';
 
-// Design Ref: Figma 1211:2999 — 스텝퍼는 상단이 아니라 좌측 LNB의 "AI 광고 배너"
-// 하위 트리로 들어간다(2026-08-08 사용자 확정). 원은 20px 검정, 숫자는 흰색.
+// Design Ref: 좌측 LNB "AI 광고 배너" 하위 트리로 들어가는 세로 스텝퍼.
+// 원 사이에 연결선을 그어 단계가 이어져 있음을 보인다.
 //
-// 상태 구분은 우리 규칙을 유지한다: 완료는 체크, 현재는 숫자 + 굵은 라벨,
-// 예정은 회색 테두리. 완료한 단계만 눌러서 되돌아갈 수 있고, 안 가본 단계로
-// 건너뛰는 건 막는다.
+// 상태 구분: 완료는 검정 원 + 체크, 현재는 검정 원 + 숫자 + 굵은 라벨,
+// 예정은 회색 원 + 흐린 라벨. 완료한 단계만 눌러서 되돌아갈 수 있다.
 
 export interface StepDefinition {
   step: 1 | 2 | 3;
@@ -26,20 +25,19 @@ interface Props {
 
 export function StepIndicator({ currentStep, onStepSelect }: Props) {
   return (
-    <ol className="flex flex-col gap-1 pl-[52px]">
-      {STEPS.map((s) => {
+    <ol className="flex flex-col pl-6">
+      {STEPS.map((s, i) => {
         const isActive = s.step === currentStep;
         const isDone = s.step < currentStep;
         const canNavigate = isDone && Boolean(onStepSelect);
+        const isLast = i === STEPS.length - 1;
 
-        const inner = (
+        const content = (
           <>
             <span
               aria-hidden
-              className={`flex size-5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium ${
-                isDone || isActive
-                  ? 'bg-ink text-white'
-                  : 'border border-line text-ink-muted'
+              className={`z-10 flex size-6 shrink-0 items-center justify-center rounded-full text-[13px] font-medium ${
+                isDone || isActive ? 'bg-ink text-white' : 'bg-fill text-ink-muted'
               }`}
             >
               {isDone ? (
@@ -57,7 +55,11 @@ export function StepIndicator({ currentStep, onStepSelect }: Props) {
             </span>
             <span
               className={`text-[15px] leading-[26px] ${
-                isActive ? 'font-medium text-ink' : isDone ? 'text-ink' : 'text-ink-muted'
+                isActive
+                  ? 'font-semibold text-ink'
+                  : isDone
+                    ? 'text-ink'
+                    : 'text-ink-muted'
               }`}
             >
               {s.label}
@@ -69,22 +71,31 @@ export function StepIndicator({ currentStep, onStepSelect }: Props) {
         );
 
         return (
-          <li key={s.step}>
+          <li key={s.step} className="relative">
+            {/* 다음 단계로 이어지는 세로 연결선 — 원 중앙(12px)에 맞춘다 */}
+            {!isLast && (
+              <span
+                aria-hidden
+                className={`absolute top-6 left-3 h-full w-px -translate-x-1/2 ${
+                  isDone ? 'bg-ink/30' : 'bg-line'
+                }`}
+              />
+            )}
             {canNavigate ? (
               <button
                 type="button"
                 onClick={() => onStepSelect?.(s.step)}
-                className="flex min-h-10 w-full items-center gap-2 rounded-lg pr-3 transition-[background-color,scale] duration-150 hover:bg-[#eff2f4] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+                className="flex w-full items-center gap-2.5 rounded-lg py-2 pr-3 transition-[background-color,scale] duration-150 hover:bg-fill active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
               >
-                {inner}
+                {content}
                 <span className="sr-only">— 이 단계로 돌아가기</span>
               </button>
             ) : (
               <span
                 aria-current={isActive ? 'step' : undefined}
-                className="flex min-h-10 items-center gap-2 pr-3"
+                className="flex items-center gap-2.5 py-2 pr-3"
               >
-                {inner}
+                {content}
               </span>
             )}
           </li>

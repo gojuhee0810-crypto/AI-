@@ -4,7 +4,7 @@
 // 스텝퍼는 상단이 아니라 LNB 트리 안에 있다(2026-08-08 사용자 확정).
 // 하단 액션 바는 우측 정렬이 아니라 가운데 정렬이다(Figma 좌표 674/793 기준).
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AdStudioShell } from '@/components/shell/AdStudioShell';
 import { Step1ImagePanel } from '@/components/ai-banner/Step1ImagePanel';
 import { Step2CopyPanel } from '@/components/ai-banner/Step2CopyPanel';
@@ -26,6 +26,9 @@ export default function AiBannerStudioPage() {
   // 마운트 이후에 불러온다. 불러오기 전에는 저장하지 않는다 — 순서가 뒤바뀌면
   // 복원되기 직전에 빈 상태로 덮어써서 오히려 작업을 날린다.
   const [isHydrated, setIsHydrated] = useState(false);
+  // 소재 이름을 건너뛰고 다음 필드를 건드렸을 때만 켠다. 처음부터 빨갛게 띄우지 않는다.
+  const [showNameError, setShowNameError] = useState(false);
+  const materialNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const restored = loadFlowState();
@@ -42,7 +45,14 @@ export default function AiBannerStudioPage() {
 
   function handleReset() {
     setState(INITIAL_FLOW_STATE);
+    setShowNameError(false);
     clearFlowState();
+  }
+
+  /** 소재 이름을 건너뛰고 이미지 유형을 고르려 할 때 — 에러를 띄우고 그쪽으로 데려간다. */
+  function handleRequireMaterialName() {
+    setShowNameError(true);
+    materialNameRef.current?.focus();
   }
 
   const canGoNext =
@@ -86,17 +96,34 @@ export default function AiBannerStudioPage() {
                 소재 이름 <span className="text-required">*</span>
               </label>
               <input
+                ref={materialNameRef}
                 id="materialName"
                 type="text"
                 maxLength={25}
                 placeholder="소재 이름을 입력해주세요"
                 value={state.materialName}
-                onChange={(e) => patch({ materialName: e.target.value })}
-                className="mt-3 h-12 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+                aria-invalid={showNameError || undefined}
+                aria-describedby={showNameError ? 'materialNameError' : undefined}
+                onChange={(e) => {
+                  patch({ materialName: e.target.value });
+                  if (e.target.value.trim()) setShowNameError(false);
+                }}
+                className={`mt-3 h-12 w-full rounded-lg border bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint ${
+                  showNameError ? 'border-required' : 'border-line focus:border-ink'
+                }`}
               />
-              <p className="mt-1.5 px-4 text-right text-[12px] leading-[19px] tabular-nums text-ink">
-                {state.materialName.length}/25
-              </p>
+              <div className="mt-1.5 flex items-start justify-between gap-4 px-4">
+                <p
+                  id="materialNameError"
+                  role="alert"
+                  className="text-[12px] leading-[19px] text-required"
+                >
+                  {showNameError ? '소재 이름을 먼저 입력해주세요' : ''}
+                </p>
+                <p className="text-[12px] leading-[19px] tabular-nums text-ink">
+                  {state.materialName.length}/25
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -108,7 +135,13 @@ export default function AiBannerStudioPage() {
         <div className="flex flex-1 items-stretch">
           <div className="min-w-0 flex-1 px-12 py-10">
             <div className="max-w-[523px]">
-              {state.step === 1 && <Step1ImagePanel state={state} patch={patch} />}
+              {state.step === 1 && (
+                <Step1ImagePanel
+                  state={state}
+                  patch={patch}
+                  onRequireMaterialName={handleRequireMaterialName}
+                />
+              )}
               {state.step === 2 && <Step2CopyPanel state={state} patch={patch} />}
               {state.step === 3 && <Step3ReviewPanel state={state} patch={patch} />}
             </div>
