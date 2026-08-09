@@ -65,7 +65,7 @@ export default function AiBannerStudioPage() {
     // 완료한 단계로만 되돌아갈 수 있다. 앞 단계 건너뛰기는 막는다.
     <AdStudioShell currentStep={state.step} onStepSelect={(step) => patch({ step })}>
       <div className="flex min-h-full flex-col">
-        <div className="px-8 pt-8">
+        <div className="px-12 pt-8">
           <h1 className="text-[32px] leading-[45px] font-medium tracking-[-0.4px] text-ink">
             AI 광고 소재 만들기
           </h1>
@@ -134,12 +134,14 @@ export default function AiBannerStudioPage() {
             미리보기는 스크롤을 따라오도록 헤더 아래에 붙인다. */}
         {/* 좌우 5:5. 이전엔 폼을 523px로 묶어둬서 1440 화면에서 좌측이 남고
             그만큼 세로로 길어졌다 — 폭 제한을 풀어 스크롤을 줄인다. */}
-        {/* 오른쪽 48px는 비운다 — 미리보기의 회색 배경이 화면 끝까지 닿으면
-            페이지가 아니라 창에 붙은 패널처럼 보인다(광고센터 기존 화면과 동일).
-            폼 칸은 587px로 고정한다: 입력 폭 523 + 좌우 패딩 32×2.
-            비율(flex)로 두면 스크롤바 유무에 따라 523이 어긋난다. */}
+        {/* 1440 기준 실측(광고센터 기존 소재 폼): LNB 250 · 폼 칸 619 · 미리보기 523 ·
+            오른쪽 여백 48.
+            폼 칸은 고정한다 — 입력 523 + 좌우 패딩 48×2. 비율(flex)로 두면 스크롤바
+            유무에 따라 523이 어긋난다. 미리보기가 남는 폭을 받아 1440에서 523이 된다.
+            오른쪽 48을 비우는 건 미리보기의 회색 배경이 화면 끝까지 닿으면
+            페이지가 아니라 창에 붙은 패널처럼 보이기 때문이다. */}
         <div className="mr-12 flex flex-1 items-stretch">
-          <div className="w-[587px] shrink-0 px-8 py-8">
+          <div className="w-[619px] shrink-0 px-12 py-8">
             {state.step === 1 && (
               <Step1ImagePanel
                 state={state}
@@ -150,7 +152,7 @@ export default function AiBannerStudioPage() {
             {state.step === 2 && <Step2CopyPanel state={state} patch={patch} />}
             {state.step === 3 && <Step3ReviewPanel state={state} patch={patch} />}
           </div>
-          <aside className="min-w-0 flex-1 border-l border-line bg-sidebar px-8 py-8">
+          <aside className="min-w-0 flex-1 border-l border-line bg-sidebar px-12 py-8">
             <div className="sticky top-[108px]">
               <PreviewPanel state={state} />
             </div>
