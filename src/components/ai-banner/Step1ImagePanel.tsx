@@ -21,7 +21,7 @@ import {
   type ImageSourceType,
 } from '@/types/banner-flow';
 import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
-import { CHIP_BASE } from '@/components/ai-banner/chip';
+import { CHIP_BASE, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
 import type {
@@ -269,11 +269,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
               disabled={!hasInput || state.isGeneratingImages || hasResult}
               title={hasResult ? '다시 만들려면 각 카드의 "다시 생성하기"를 눌러주세요' : undefined}
               onClick={handleGenerate}
-              className={`flex h-12 w-full items-center justify-center gap-2 rounded-[24px] border text-[16px] leading-[26px] font-medium transition-[background-color,scale] duration-150 enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-muted ${
-                isPrimaryAction
-                  ? 'border-transparent bg-brand text-ink enabled:hover:bg-[#f2df00]'
-                  : 'border-black/[0.06] bg-[#f0f0f0] text-ink enabled:hover:bg-brand'
-              }`}
+              className={aiGenerateButtonClass(isPrimaryAction)}
             >
               <span aria-hidden>✦</span>
               {state.isGeneratingImages ? '생성 중…' : 'AI 이미지 2종 생성하기'}

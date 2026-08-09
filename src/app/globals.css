@@ -69,3 +69,26 @@ body {
 
 /* 체커보드(.checkerboard)는 뺐다 — 생성 이미지가 투명 PNG라는 걸 광고주가 이미 알고
    있어서, 격자 무늬가 알려주는 것 없이 결과 이미지만 어지럽혔다(2026-08-09 확정). */
+
+/* 한 상자 안에서 항목을 나누는 선.
+   양 끝을 투명으로 흐린다 — 선이 상자 테두리까지 닿으면 격자처럼 보여서, 나누려던
+   것보다 훨씬 강하게 시선을 자른다. 색도 --color-line보다 연하게 둔다:
+   여기서 선은 경계가 아니라 "여기서 항목이 바뀐다"는 힌트일 뿐이다. */
+.divider-fade > * + * {
+  position: relative;
+}
+
+.divider-fade > * + *::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(6, 11, 17, 0.08) 22%,
+    rgba(6, 11, 17, 0.08) 78%,
+    transparent
+  );
+}

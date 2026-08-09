@@ -13,7 +13,7 @@
 // 확인 화면은 확인만 시키고 고치지는 못하게 만든다.
 
 import { useId } from 'react';
-import { CHIP_OUTLINE } from '@/components/ai-banner/chip';
+import { CHIP_OUTLINE } from '@/components/ai-banner/buttons';
 import {
   IMAGE_STYLE_LABEL,
   IMAGE_TYPE_LABEL,
@@ -136,7 +136,7 @@ export function Step3ReviewPanel({ state, patch }: Props) {
       <section className="flex flex-col gap-3">
         <h3 className="text-[18px] leading-7 font-medium text-ink">선택한 소재 정보</h3>
 
-        <dl className="flex flex-col divide-y divide-line rounded-xl border border-line bg-surface">
+        <dl className="divider-fade flex flex-col rounded-xl border border-line bg-surface">
           <Row label="소재 이름" action={<BackChip onClick={() => patch({ step: 1 })}>수정</BackChip>}>
             <p className="text-[16px] leading-[26px] text-pretty text-ink">{state.materialName}</p>
           </Row>

@@ -10,7 +10,7 @@
 
 import { useId, useState } from 'react';
 import { resolveObjectTag, type AiBannerFlowState } from '@/types/banner-flow';
-import { CHIP_OUTLINE } from '@/components/ai-banner/chip';
+import { CHIP_OUTLINE, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
 import type {
@@ -144,11 +144,7 @@ export function Step2CopyPanel({ state, patch }: Props) {
           type="button"
           disabled={!hasInput || state.isGeneratingCopy}
           onClick={handleGenerate}
-          className={`flex h-[54px] w-full items-center justify-center gap-2 rounded-[27px] border text-[16px] leading-[26px] font-semibold transition-[background-color,scale] duration-150 enabled:active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-muted ${
-            isPrimaryAction
-              ? 'border-transparent bg-brand text-ink enabled:hover:bg-[#f2df00]'
-              : 'border-line bg-surface text-ink enabled:hover:bg-fill'
-          }`}
+          className={aiGenerateButtonClass(isPrimaryAction)}
         >
           <span aria-hidden>{hasResult ? '↻' : '✦'}</span>
           {state.isGeneratingCopy
@@ -197,10 +193,12 @@ export function Step2CopyPanel({ state, patch }: Props) {
           // 카드를 따로 세우지 않고 한 박스에 얇은 선으로만 나눈다. 셋은 같은 질문에
           // 대한 답이라 하나의 목록으로 읽혀야 비교가 쉽다 — 카드로 떼어놓으면
           // 각각이 독립된 것처럼 보여 눈이 셋을 오가지 않는다.
-          <div className="flex flex-col divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">
+          <div className="divider-fade flex flex-col overflow-hidden rounded-lg border border-line bg-surface">
             {state.copyRecommendations.map((rec, index) => {
               const isSelected = state.selectedCopyIndex === index;
-              const isEditing = editingIndex === index;
+              // 선택과 묶는다. 수정 중에 다른 카피를 고르면 닫아야 하는데,
+              // 그 카드에는 이제 '완료' 버튼이 없어 열린 채로 갇힌다.
+              const isEditing = isSelected && editingIndex === index;
               return (
                 <label
                   key={rec.pattern}
@@ -223,17 +221,22 @@ export function Step2CopyPanel({ state, patch }: Props) {
                       {rec.pattern}
                     </span>
                   </span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
-                      setEditingIndex(isEditing ? null : index);
-                    }}
-                    className={CHIP_OUTLINE}
-                  >
-                    <span aria-hidden>✎</span>
-                    {isEditing ? '완료' : '수정'}
-                  </button>
+                  {/* 고른 카피만 고칠 수 있다. 셋 다 수정 버튼을 달아두면 안 고를
+                      카피까지 손댈 수 있는 것처럼 보여, 비교해야 할 자리에서
+                      편집을 먼저 하게 된다. */}
+                  {isSelected && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
+                        setEditingIndex(isEditing ? null : index);
+                      }}
+                      className={CHIP_OUTLINE}
+                    >
+                      <span aria-hidden>✎</span>
+                      {isEditing ? '완료' : '수정'}
+                    </button>
+                  )}
                 </div>
 
                 {isEditing ? (
