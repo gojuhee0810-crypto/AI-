@@ -10,9 +10,11 @@ import { Step1ImagePanel } from '@/components/ai-banner/Step1ImagePanel';
 import { Step2CopyPanel } from '@/components/ai-banner/Step2CopyPanel';
 import { Step3ReviewPanel } from '@/components/ai-banner/Step3ReviewPanel';
 import { PreviewPanel } from '@/components/ai-banner/PreviewPanel';
+import { Toast } from '@/components/ai-banner/Toast';
 import { clearFlowState, loadFlowState, saveFlowState } from '@/lib/flow-state-storage';
 import {
   INITIAL_FLOW_STATE,
+  MATERIAL_NAME_LIMIT,
   isStepComplete,
   type AiBannerFlowState,
 } from '@/types/banner-flow';
@@ -32,6 +34,7 @@ export default function AiBannerStudioPage() {
   const [isHydrated, setIsHydrated] = useState(false);
   // 소재 이름을 건너뛰고 다음 필드를 건드렸을 때만 켠다. 처음부터 빨갛게 띄우지 않는다.
   const [showNameError, setShowNameError] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const materialNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -60,6 +63,22 @@ export default function AiBannerStudioPage() {
   }
 
   const canGoNext = isStepComplete(state, state.step);
+
+  /**
+   * 다음 단계 버튼. 아직 못 넘어가는 상태여도 누를 수 있게 둔다.
+   *
+   * 비활성 버튼은 "왜 안 되는지"를 말해주지 않는다. 눌러서 무엇이 비었는지 알려주는
+   * 편이 낫다 — 비어 있는 칸은 화면 밖에 있을 수 있으므로 토스트로도 함께 알린다.
+   */
+  function handleNext() {
+    if (!canGoNext) {
+      setToast('필수 항목을 입력해주세요');
+      if (state.step === 1 && !state.materialName.trim()) handleRequireMaterialName();
+      return;
+    }
+    if (state.step < 3) patch({ step: (state.step + 1) as 2 | 3 });
+    // step 3 "등록하고 심사 요청하기"는 광고센터 연동(미착수) 전까지 동작 없음
+  }
 
   return (
     // 완료한 단계로만 되돌아갈 수 있다. 앞 단계 건너뛰기는 막는다.
@@ -103,7 +122,7 @@ export default function AiBannerStudioPage() {
                 ref={materialNameRef}
                 id="materialName"
                 type="text"
-                maxLength={25}
+                maxLength={MATERIAL_NAME_LIMIT}
                 placeholder="소재 이름을 입력해주세요"
                 value={state.materialName}
                 aria-invalid={showNameError || undefined}
@@ -112,8 +131,12 @@ export default function AiBannerStudioPage() {
                   patch({ materialName: e.target.value });
                   if (e.target.value.trim()) setShowNameError(false);
                 }}
-                className={`mt-3 h-12 w-full rounded-lg border bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint ${
-                  showNameError ? 'border-required' : 'border-line focus:border-ink'
+                // 에러일 때는 테두리만이 아니라 배경과 placeholder까지 붉게 물린다.
+                // 테두리 1px만 바꾸면 화면이 길 때 훑어봐도 어느 칸이 비었는지 안 보인다.
+                className={`mt-3 h-12 w-full rounded-lg border px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none ${
+                  showNameError
+                    ? 'border-required bg-[#fff4f4] placeholder:text-required'
+                    : 'border-line bg-surface placeholder:text-ink-faint focus:border-ink'
                 }`}
               />
               <div className="mt-1.5 flex items-start justify-between gap-4 px-4">
@@ -122,10 +145,10 @@ export default function AiBannerStudioPage() {
                   role="alert"
                   className="text-[12px] leading-[19px] text-required"
                 >
-                  {showNameError ? '소재 이름을 먼저 입력해주세요' : ''}
+                  {showNameError ? '필수 입력 항목이에요.' : ''}
                 </p>
                 <p className="text-[12px] leading-[19px] tabular-nums text-ink">
-                  {state.materialName.length}/25
+                  {state.materialName.length}/{MATERIAL_NAME_LIMIT}
                 </p>
               </div>
             </div>
@@ -174,17 +197,15 @@ export default function AiBannerStudioPage() {
           </button>
           <button
             type="button"
-            disabled={!canGoNext}
-            onClick={() => {
-              if (state.step < 3) patch({ step: (state.step + 1) as 2 | 3 });
-              // step 3 "소재 등록하기"는 광고센터 연동(미착수) 전까지 동작 없음
-            }}
-            className="h-12 min-w-[222px] rounded-[24px] bg-brand px-6 text-[16px] leading-[26px] font-medium text-ink transition-[background-color,scale] duration-150 enabled:hover:bg-[#f2df00] enabled:active:scale-[0.96] disabled:cursor-not-allowed disabled:bg-fill disabled:text-ink-muted"
+            onClick={handleNext}
+            className="h-12 min-w-[222px] rounded-[24px] bg-brand px-6 text-[16px] leading-[26px] font-medium text-ink transition-[background-color,scale] duration-150 hover:bg-[#f2df00] active:scale-[0.96]"
           >
             {NEXT_LABEL[state.step]}
           </button>
         </div>
       </div>
+
+      <Toast message={toast} onDismiss={() => setToast(null)} />
     </AdStudioShell>
   );
 }

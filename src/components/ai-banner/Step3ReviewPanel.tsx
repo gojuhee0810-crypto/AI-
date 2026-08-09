@@ -303,7 +303,13 @@ export function Step3ReviewPanel({ state, patch }: Props) {
             aria-invalid={showUrlError || undefined}
             aria-describedby={showUrlError ? `${landingId}-error` : undefined}
             onChange={(e) => patch({ landingUrl: e.target.value })}
-            className={`h-12 ${INPUT_CLASS} ${showUrlError ? 'border-required focus:border-required' : ''}`}
+            // 에러일 때 배경과 placeholder까지 붉게 — 테두리 1px만으로는 긴 화면에서
+            // 어느 칸이 문제인지 훑어봐서 안 보인다.
+            className={`h-12 ${INPUT_CLASS} ${
+              showUrlError
+                ? 'border-required bg-[#fff4f4] placeholder:text-required focus:border-required'
+                : ''
+            }`}
           />
           {/* 입력을 시작한 뒤에만 알린다 — 빈 칸을 처음부터 빨갛게 만들지 않는다 */}
           {showUrlError && (

@@ -20,11 +20,19 @@ import {
   type BadgeStyle,
   type ImageSourceType,
 } from '@/types/banner-flow';
+import { AlertDialog } from '@/components/ai-banner/AlertDialog';
 import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
 import { CHIP_BASE, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { Radio } from '@/components/ai-banner/Radio';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
+import {
+  UPLOAD_ERROR_MESSAGES,
+  checkUploadFile,
+  checkUploadPixels,
+  type UploadErrorKind,
+  type UploadRule,
+} from '@/lib/upload-errors';
 import type {
   GenerateImageRequest,
   GenerateImageResponse,
@@ -57,10 +65,19 @@ const PROGRESS_MESSAGES = [
   '배경을 정리하고 마무리하는 중이에요',
 ];
 
-/** 화면에 적힌 규격과 같은 값이어야 한다 — 다르면 "1MB"라 써놓고 5MB를 받는다. */
-const MAX_UPLOAD_BYTES = 1024 * 1024;
-/** 로고는 매체 가이드상 1MB 이하 (docs/guides/admin-design-system.md) */
-const MAX_LOGO_BYTES = 1024 * 1024;
+/** 화면에 적은 규격과 같은 값이어야 한다 — 다르면 "1MB"라 써놓고 5MB를 받는다. */
+const PRODUCT_UPLOAD_RULE: UploadRule = {
+  accept: ['image/png', 'image/jpeg'],
+  maxBytes: 1024 * 1024,
+  maxPixels: { width: 400, height: 400 },
+};
+
+/** 로고는 배너 위에 겹쳐지므로 배경이 투명해야 한다 — PNG만 받는다. */
+const LOGO_UPLOAD_RULE: UploadRule = {
+  accept: ['image/png'],
+  maxBytes: 1024 * 1024,
+  maxPixels: { width: 1371, height: 1218 },
+};
 
 /**
  * 업로드 규격 목록 — 디자인 시스템 §6-5 "목록 안내문".
@@ -96,8 +113,11 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
   const badgeTextId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [logoError, setLogoError] = useState<string | null>(null);
+  // 업로드 실패는 인라인 문구가 아니라 알럿 모달로 알린다(디자인 시스템 §6-4).
+  // 파일 창이 닫히면서 화면이 그대로라, 작은 빨간 글씨는 실패한 줄도 모르고 지나친다.
+  const [uploadError, setUploadError] = useState<UploadErrorKind | null>(null);
+  const [logoError, setLogoError] = useState<UploadErrorKind | null>(null);
+  const alertKind = uploadError ?? logoError;
 
   const hasMaterialName = state.materialName.trim().length > 0;
   const isGraphic = state.imageType === 'graphic';
@@ -117,25 +137,53 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
     patch({ imageType: value });
   }
 
+  /**
+   * 규격을 통과한 파일만 data URL로 바꿔 넘긴다.
+   *
+   * 픽셀 크기는 파일만 봐서는 알 수 없어 한 번 그려본 뒤 검사한다. 그래서 형식·용량
+   * (즉시 판단) → 읽기 → 크기 순서가 된다.
+   */
+  function readUpload(
+    file: File,
+    rule: UploadRule,
+    onDone: (dataUrl: string) => void,
+    onFail: (kind: UploadErrorKind) => void,
+  ) {
+    const fileError = checkUploadFile(file, rule);
+    if (fileError) return onFail(fileError);
+
+    const reader = new FileReader();
+    reader.onerror = () => onFail('failed');
+    reader.onload = () => {
+      const dataUrl = String(reader.result);
+      if (!rule.maxPixels) return onDone(dataUrl);
+
+      const probe = new Image();
+      probe.onerror = () => onFail('failed');
+      probe.onload = () => {
+        const pixelError = checkUploadPixels(
+          { width: probe.naturalWidth, height: probe.naturalHeight },
+          rule,
+        );
+        if (pixelError) return onFail(pixelError);
+        onDone(dataUrl);
+      };
+      probe.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = ''; // 같은 파일을 다시 골라도 change가 걸리도록
     if (!file) return;
 
-    if (!['image/png', 'image/jpeg'].includes(file.type)) {
-      setUploadError('PNG 또는 JPG 파일만 올릴 수 있어요.');
-      return;
-    }
-    if (file.size > MAX_UPLOAD_BYTES) {
-      setUploadError('1MB 이하 파일만 올릴 수 있어요.');
-      return;
-    }
-
-    setUploadError(null);
-    const reader = new FileReader();
-    reader.onload = () => patch({ productImageUrl: String(reader.result) });
-    reader.onerror = () => setUploadError('파일을 읽지 못했어요. 다시 시도해주세요.');
-    reader.readAsDataURL(file);
+    readUpload(
+      file,
+      PRODUCT_UPLOAD_RULE,
+      (dataUrl) => patch({ productImageUrl: dataUrl }),
+      setUploadError,
+    );
   }
 
   function handleLogoChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -143,21 +191,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
     event.target.value = '';
     if (!file) return;
 
-    // 로고는 배너 위에 겹쳐지므로 배경이 투명해야 한다 — PNG만 받는다.
-    if (file.type !== 'image/png') {
-      setLogoError('로고는 배경이 투명한 PNG만 올릴 수 있어요.');
-      return;
-    }
-    if (file.size > MAX_LOGO_BYTES) {
-      setLogoError('1MB 이하 파일만 올릴 수 있어요.');
-      return;
-    }
-
-    setLogoError(null);
-    const reader = new FileReader();
-    reader.onload = () => patch({ logoUrl: String(reader.result) });
-    reader.onerror = () => setLogoError('파일을 읽지 못했어요. 다시 시도해주세요.');
-    reader.readAsDataURL(file);
+    readUpload(file, LOGO_UPLOAD_RULE, (dataUrl) => patch({ logoUrl: dataUrl }), setLogoError);
   }
 
   async function callGenerate(body: GenerateImageRequest) {
@@ -449,9 +483,6 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
             )}
           </button>
 
-          {uploadError && (
-            <p className="text-[14px] leading-[22px] text-required">{uploadError}</p>
-          )}
         </section>
       )}
 
@@ -580,16 +611,23 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                 <span aria-hidden>+</span> {state.logoUrl ? '로고 변경' : '로고 업로드'}
               </button>
             </div>
-            {logoError ? (
-              <p className="text-[14px] leading-[22px] text-required">{logoError}</p>
-            ) : (
-              <p className="text-[14px] leading-[22px] text-ink-muted">
-                로고는 배너 이미지 좌측 하단에 1/4 크기로 붙습니다
-              </p>
-            )}
+            <p className="text-[14px] leading-[22px] text-ink-muted">
+              로고는 배너 이미지 좌측 하단에 1/4 크기로 붙습니다
+            </p>
           </div>
         )}
       </section>
+
+      {/* 업로드 실패 알림 — 제품 이미지와 로고가 같은 모달을 쓴다 */}
+      <AlertDialog
+        open={alertKind !== null}
+        title={alertKind ? UPLOAD_ERROR_MESSAGES[alertKind].title : ''}
+        description={alertKind ? UPLOAD_ERROR_MESSAGES[alertKind].description : undefined}
+        onClose={() => {
+          setUploadError(null);
+          setLogoError(null);
+        }}
+      />
     </div>
   );
 }
