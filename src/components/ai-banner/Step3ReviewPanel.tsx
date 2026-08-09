@@ -374,6 +374,9 @@ export function Step3ReviewPanel({ state, patch }: Props) {
         open={editing === 'copy'}
         title="카피 변경"
         canSave={canSaveEdit}
+        // 카피 3안을 나란히 읽고 비교해야 한다. 400px에서는 서브타이틀이 줄바꿈돼
+        // 실제 배너와 다른 모양으로 보인다.
+        width={560}
         onClose={() => setEditing(null)}
         onSave={saveEdit}
       >

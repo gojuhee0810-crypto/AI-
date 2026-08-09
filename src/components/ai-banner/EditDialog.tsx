@@ -1,11 +1,10 @@
 'use client';
 
-// Design Ref: 광고센터 모달 디자인 시스템(2026-08-09 사용자 제공).
-// 흰 카드 radius 16, 안쪽 여백 32, 타이틀·버튼 가운데 정렬, 옐로우 pill 확인 버튼.
+// Design Ref: Figma 12:115606 팝업 컴포넌트 — 껍데기·버튼 값은 popup.ts에 모아 뒀다.
 //
 // 원본은 확인 버튼 하나짜리 알럿이다. 여기선 값을 고치는 폼이라 취소/저장 두 개를
-// 나란히 두되 정렬과 크기는 그대로 따른다. 입력 필드만 좌측 정렬한다 —
-// 가운데 정렬하면 라벨과 값이 서로 어긋나 읽는 눈이 계속 좌우로 튄다.
+// 나란히 두되(그룹 298 = 144×2 + 10) 정렬과 크기는 그대로 따른다.
+// 입력 필드만 좌측 정렬한다 — 가운데 정렬하면 라벨과 값이 어긋나 눈이 좌우로 튄다.
 //
 // 3단계에서 값을 고칠 때 앞 단계로 되돌아가지 않게 하려고 만들었다. 되돌아가면
 // 3단계에서 채우던 등록 정보를 두고 나갔다가 다시 찾아 들어와야 한다.
@@ -14,18 +13,37 @@
 // 라이브러리 없이 접근성이 맞는다.
 
 import { useEffect, useRef } from 'react';
+import {
+  POPUP_BUTTON,
+  POPUP_BUTTON_GAP,
+  POPUP_SHELL,
+  POPUP_WIDTH,
+} from '@/components/ai-banner/popup';
 
 interface Props {
   open: boolean;
   title: string;
   /** 저장 버튼 활성 여부 — 비면 저장할 게 없는 상태다 */
   canSave: boolean;
+  /**
+   * 카드 폭(px). 기본은 팝업 규격 420이고, 고를 것이 여럿인 모달은 넓힌다 —
+   * 좁은 카드에 선택지를 우겨넣으면 카피가 줄바꿈돼 서로 비교가 안 된다.
+   */
+  width?: number;
   onClose: () => void;
   onSave: () => void;
   children: React.ReactNode;
 }
 
-export function EditDialog({ open, title, canSave, onClose, onSave, children }: Props) {
+export function EditDialog({
+  open,
+  title,
+  canSave,
+  width = POPUP_WIDTH,
+  onClose,
+  onSave,
+  children,
+}: Props) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -48,33 +66,31 @@ export function EditDialog({ open, title, canSave, onClose, onSave, children }: 
       onClick={(e) => {
         if (e.target === ref.current) onClose();
       }}
-      // m-auto가 있어야 화면 가운데 선다. <dialog>는 margin:auto로 가운데 정렬되는데
-      // Tailwind 프리플라이트가 margin을 0으로 초기화한다.
-      className="m-auto w-[400px] max-w-[calc(100vw-32px)] rounded-2xl bg-surface p-0 text-ink backdrop:bg-black/45"
+      style={{ width }}
+      className={POPUP_SHELL}
     >
       {open && (
-        <div className="flex flex-col gap-6 p-8">
-          {/* Section title 20/30/-0.2 (디자인 시스템 §4), 가운데 정렬 */}
-          <h2 className="text-center text-[20px] leading-[30px] font-semibold tracking-[-0.2px] text-balance text-ink">
+        <div className="flex flex-col gap-6 px-8 pt-8 pb-10">
+          {/* 타이틀 24/35/-0.4 — 팝업 규격(Figma 실측) */}
+          <h2 className="text-center text-[24px] leading-[35px] font-medium tracking-[-0.4px] text-balance text-ink">
             {title}
           </h2>
 
           {/* 입력은 좌측 정렬 — 가운데로 두면 라벨과 값이 어긋난다 */}
           <div className="max-h-[56vh] overflow-y-auto">{children}</div>
 
-          <div className="flex justify-center gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="h-11 min-w-[131px] rounded-[24px] bg-fill px-5 text-[16px] leading-[26px] font-medium text-ink transition-[background-color,scale] duration-150 hover:bg-[#e5e9ec] active:scale-[0.96]"
-            >
+          <div
+            className="flex justify-center"
+            style={{ gap: POPUP_BUTTON_GAP }}
+          >
+            <button type="button" onClick={onClose} className={POPUP_BUTTON.support}>
               취소
             </button>
             <button
               type="button"
               disabled={!canSave}
               onClick={onSave}
-              className="h-11 min-w-[131px] rounded-[24px] bg-brand px-5 text-[16px] leading-[26px] font-medium text-ink transition-[background-color,scale] duration-150 enabled:hover:bg-[#f2df00] enabled:active:scale-[0.96] disabled:cursor-not-allowed disabled:bg-fill disabled:text-ink-muted"
+              className={POPUP_BUTTON.primary}
             >
               저장
             </button>

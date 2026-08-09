@@ -16,6 +16,7 @@ import {
   type AiBannerFlowState,
 } from '@/types/banner-flow';
 import { CHIP_OUTLINE, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
+import { inputClass } from '@/components/ai-banner/fields';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
 import { Radio } from '@/components/ai-banner/Radio';
@@ -28,6 +29,8 @@ import type {
 interface Props {
   state: AiBannerFlowState;
   patch: (next: Partial<AiBannerFlowState>) => void;
+  /** 제출을 시도했는데 못 넘어간 상태 — 빈 필수 칸을 붉게 표시한다. */
+  showErrors: boolean;
 }
 
 // 카피 생성은 Claude 호출 1~2회라 20~40초가 걸린다. 그동안 무엇이 진행 중인지
@@ -55,7 +58,7 @@ function CharCounter({ value, limit }: { value: string; limit: number }) {
   );
 }
 
-export function Step2CopyPanel({ state, patch }: Props) {
+export function Step2CopyPanel({ state, patch, showErrors }: Props) {
   const benefitId = useId();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -123,7 +126,7 @@ export function Step2CopyPanel({ state, patch }: Props) {
             placeholder={'혜택·조건·기한을 순서대로 적어주세요\n예) 환급 이번달 무료'}
             value={state.benefit}
             onChange={(e) => patch({ benefit: e.target.value })}
-            className="h-[139px] w-full resize-none rounded-lg border border-line bg-surface px-4 py-3 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+            className={inputClass(showErrors && !hasInput, 'h-[139px] resize-none py-3')}
           />
           <p className="mt-1.5 px-4 text-right">
             <CharCounter value={state.benefit} limit={BENEFIT_LIMIT} />

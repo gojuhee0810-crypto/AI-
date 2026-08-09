@@ -23,6 +23,7 @@ import {
 import { AlertDialog } from '@/components/ai-banner/AlertDialog';
 import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
 import { CHIP_BASE, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
+import { inputClass } from '@/components/ai-banner/fields';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { Radio } from '@/components/ai-banner/Radio';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
@@ -45,6 +46,8 @@ interface Props {
   patch: (next: Partial<AiBannerFlowState>) => void;
   /** 소재 이름이 비어 있을 때 호출 — page.tsx가 에러를 띄우고 포커스를 옮긴다. */
   onRequireMaterialName: () => void;
+  /** 제출을 시도했는데 못 넘어간 상태 — 빈 필수 칸을 붉게 표시한다. */
+  showErrors: boolean;
 }
 
 // 문구는 banner-flow.ts가 갖고 있다 — 3단계 확인 화면이 같은 이름을 써야 한다.
@@ -108,7 +111,7 @@ function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?
   );
 }
 
-export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) {
+export function Step1ImagePanel({ state, patch, onRequireMaterialName, showErrors }: Props) {
   const objectId = useId();
   const badgeTextId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -298,7 +301,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                 placeholder="생성하고 싶은 오브젝트를 입력해주세요"
                 value={state.primaryObject}
                 onChange={(e) => patch({ primaryObject: e.target.value })}
-                className="h-12 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+                className={inputClass(showErrors && !hasInput, 'h-12')}
               />
               <p className="mt-1.5 px-4 text-right text-[12px] leading-[19px] tabular-nums text-ink">
                 {state.primaryObject.length}/15

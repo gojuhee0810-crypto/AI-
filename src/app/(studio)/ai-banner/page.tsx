@@ -35,6 +35,9 @@ export default function AiBannerStudioPage() {
   // 소재 이름을 건너뛰고 다음 필드를 건드렸을 때만 켠다. 처음부터 빨갛게 띄우지 않는다.
   const [showNameError, setShowNameError] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // 제출을 시도한 뒤에만 빈 필수 칸을 붉게 만든다. 처음부터 빨간 화면을 보여주면
+  // 아직 하지도 않은 일을 잘못했다고 말하는 셈이다.
+  const [showErrors, setShowErrors] = useState(false);
   const materialNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -53,6 +56,7 @@ export default function AiBannerStudioPage() {
   function handleReset() {
     setState(INITIAL_FLOW_STATE);
     setShowNameError(false);
+    setShowErrors(false);
     clearFlowState();
   }
 
@@ -72,10 +76,12 @@ export default function AiBannerStudioPage() {
    */
   function handleNext() {
     if (!canGoNext) {
+      setShowErrors(true);
       setToast('필수 항목을 입력해주세요');
       if (state.step === 1 && !state.materialName.trim()) handleRequireMaterialName();
       return;
     }
+    setShowErrors(false); // 단계를 넘어가면 앞 단계의 빨간 표시를 들고 가지 않는다
     if (state.step < 3) patch({ step: (state.step + 1) as 2 | 3 });
     // step 3 "등록하고 심사 요청하기"는 광고센터 연동(미착수) 전까지 동작 없음
   }
@@ -174,9 +180,12 @@ export default function AiBannerStudioPage() {
                 state={state}
                 patch={patch}
                 onRequireMaterialName={handleRequireMaterialName}
+                showErrors={showErrors}
               />
             )}
-            {state.step === 2 && <Step2CopyPanel state={state} patch={patch} />}
+            {state.step === 2 && (
+              <Step2CopyPanel state={state} patch={patch} showErrors={showErrors} />
+            )}
             {state.step === 3 && <Step3ReviewPanel state={state} patch={patch} />}
           </div>
           <aside className="min-w-0 flex-1 border-l border-line bg-sidebar px-12 py-8">
