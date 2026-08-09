@@ -274,11 +274,6 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
               <span aria-hidden>✦</span>
               {state.isGeneratingImages ? '생성 중…' : 'AI 이미지 2종 생성하기'}
             </button>
-            {hasResult && (
-              <p className="text-[13px] leading-[20px] text-ink-muted">
-                다시 만들려면 아래 카드의 &lsquo;다시 생성하기&rsquo;를 눌러주세요
-              </p>
-            )}
           </section>
 
           {/* AI 이미지 생성 — 결과 선택 */}

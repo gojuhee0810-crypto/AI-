@@ -85,9 +85,10 @@ export default function AiBannerStudioPage() {
             ))}
           </div>
           {/* 소재 이름은 구분선 위(미리보기 영역 밖)에 온다 — Figma 1211:3115 기준.
-              카피·최종 단계에는 없고 1단계에서만 노출된다. */}
+              카피·최종 단계에는 없고 1단계에서만 노출된다.
+              폭은 아래 폼 칸과 같은 523px(광고센터 기존 소재 폼 실측). */}
           {state.step === 1 && (
-            <div className="mt-6 max-w-[523px]">
+            <div className="mt-6 w-[523px] max-w-full">
               <label
                 htmlFor="materialName"
                 className="text-[18px] leading-7 font-medium text-ink"
@@ -127,14 +128,18 @@ export default function AiBannerStudioPage() {
           )}
         </div>
 
-        <div className="mt-6 border-t border-line" />
+        <div className="mt-6 mr-12 border-t border-line" />
 
         {/* 본문: 좌 폼 / 우 미리보기 — 미리보기 우측 배치는 확정 요구사항.
             미리보기는 스크롤을 따라오도록 헤더 아래에 붙인다. */}
         {/* 좌우 5:5. 이전엔 폼을 523px로 묶어둬서 1440 화면에서 좌측이 남고
             그만큼 세로로 길어졌다 — 폭 제한을 풀어 스크롤을 줄인다. */}
-        <div className="flex flex-1 items-stretch">
-          <div className="min-w-0 flex-1 px-8 py-8">
+        {/* 오른쪽 48px는 비운다 — 미리보기의 회색 배경이 화면 끝까지 닿으면
+            페이지가 아니라 창에 붙은 패널처럼 보인다(광고센터 기존 화면과 동일).
+            폼 칸은 587px로 고정한다: 입력 폭 523 + 좌우 패딩 32×2.
+            비율(flex)로 두면 스크롤바 유무에 따라 523이 어긋난다. */}
+        <div className="mr-12 flex flex-1 items-stretch">
+          <div className="w-[587px] shrink-0 px-8 py-8">
             {state.step === 1 && (
               <Step1ImagePanel
                 state={state}

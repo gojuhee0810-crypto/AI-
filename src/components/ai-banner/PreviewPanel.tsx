@@ -79,7 +79,7 @@ export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
           {/* 이미지는 폭 기준으로 잡는다 — 안내 문구가 붙어 배너가 세로로 늘어나도
               이미지까지 같이 커지면 안 된다.
               로고와 혜택 배지는 둘 다 이미지 좌측 하단에 얹힌다(하나만 고를 수 있다). */}
-          <div className="relative my-[1%] ml-[3%] aspect-square w-[22.8%] shrink-0 self-center rounded-lg">
+          <div className="relative my-[1%] ml-[3%] aspect-square w-[26.6%] shrink-0 self-center rounded-lg">
             {bannerImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={bannerImageUrl} alt="배너 이미지" className="size-full object-contain" />
@@ -97,13 +97,13 @@ export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
             {showBadge && (
               /* 폭이 이미지 대비 %라, 이미지를 키울 때 배지까지 같이 커진다.
                  배지 크기는 그대로 두기로 해서 이미지 배율만큼 나눠 잡았다
-                 (이미지 19%→22.8%일 때 배지 56%→47%, 화면에 보이는 크기는 동일).
+                 (이미지 19%→26.6%일 때 배지 56%→40%, 화면에 보이는 크기는 동일).
                  이미지 안쪽에 넣는다 — 밖으로 빼면 배너 모서리에 붙어 잘린 것처럼
                  보인다. 이미지와 겹치는 건 의도한 배치다. */
               <BenefitBadge
                 text={state.badgeText}
                 style={state.badgeStyle}
-                className="absolute bottom-[8%] left-[4%] w-[47%]"
+                className="absolute bottom-[8%] left-[4%] w-[40%]"
               />
             )}
           </div>
