@@ -6,9 +6,9 @@
 //              → 배너 강조 요소 → 로고 업로드
 // (소재 이름은 구분선 위 헤더 영역에 있어 page.tsx가 그린다)
 //
-// 2026-08-08: 입력 순서를 강제한다. 소재 이름을 적기 전에는 이미지 유형을 고를 수 없고,
-// 시도하면 소재 이름 필드에 에러가 뜬다 — 아무 값도 없는 상태로 진행하다 마지막에
-// 막히는 것보다 첫 필드에서 막히는 편이 낫다.
+// 2026-08-10: 입력 순서 강제를 걷어냈다. 소재 이름 없이 이미지 유형을 고르면 곧바로
+// 빨간 에러를 띄웠는데, 아직 아무것도 잘못하지 않은 시점에 혼내는 꼴이었다.
+// 빈 필수 칸은 하단 CTA를 눌렀을 때만 표시한다(showErrors).
 
 import { useId, useRef, useState } from 'react';
 import {
@@ -44,8 +44,6 @@ import type {
 interface Props {
   state: AiBannerFlowState;
   patch: (next: Partial<AiBannerFlowState>) => void;
-  /** 소재 이름이 비어 있을 때 호출 — page.tsx가 에러를 띄우고 포커스를 옮긴다. */
-  onRequireMaterialName: () => void;
   /** 제출을 시도했는데 못 넘어간 상태 — 빈 필수 칸을 붉게 표시한다. */
   showErrors: boolean;
 }
@@ -111,7 +109,7 @@ function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?
   );
 }
 
-export function Step1ImagePanel({ state, patch, onRequireMaterialName, showErrors }: Props) {
+export function Step1ImagePanel({ state, patch, showErrors }: Props) {
   const objectId = useId();
   const badgeTextId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -122,7 +120,6 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName, showError
   const [logoError, setLogoError] = useState<UploadErrorKind | null>(null);
   const alertKind = uploadError ?? logoError;
 
-  const hasMaterialName = state.materialName.trim().length > 0;
   const isGraphic = state.imageType === 'graphic';
   const isProduct = state.imageType === 'product';
   const hasInput = state.primaryObject.trim().length > 0;
@@ -130,15 +127,6 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName, showError
   // 지금 눌러야 진행되는 버튼만 브랜드 컬러. 결과가 나오면 주요 액션이
   // 하단 "카피 문구 생성하러가기"로 넘어가므로 회색으로 내린다.
   const isPrimaryAction = isGraphic && hasInput && !state.isGeneratingImages && !hasResult;
-
-  function handleImageTypeChange(value: ImageSourceType) {
-    // 소재 이름이 먼저다. 없으면 고르지 못하게 하고 그쪽으로 안내한다.
-    if (!hasMaterialName) {
-      onRequireMaterialName();
-      return;
-    }
-    patch({ imageType: value });
-  }
 
   /**
    * 규격을 통과한 파일만 data URL로 바꿔 넘긴다.
@@ -263,24 +251,18 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName, showError
             // 뒤섞여 오히려 무엇이 선택된 건지 흐려진다. 호버는 연한 회색 배경만.
             <label
               key={value}
-              className={`flex h-12 items-center gap-2 rounded-lg border border-line bg-surface px-4 transition-colors duration-150 hover:bg-sidebar ${
-                hasMaterialName ? 'cursor-pointer' : 'cursor-not-allowed'
-              }`}
+              className="flex h-12 cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-4 transition-colors duration-150 hover:bg-sidebar"
             >
               <input
                 type="radio"
                 name="imageType"
                 value={value}
                 checked={state.imageType === value}
-                onChange={() => handleImageTypeChange(value)}
+                onChange={() => patch({ imageType: value })}
                 className="sr-only"
               />
               <Radio checked={state.imageType === value} />
-              <span
-                className={`text-[16px] leading-[26px] ${
-                  hasMaterialName ? 'text-ink' : 'text-ink-faint'
-                }`}
-              >
+              <span className="text-[16px] leading-[26px] text-ink">
                 {IMAGE_TYPE_LABEL[value]}
               </span>
             </label>

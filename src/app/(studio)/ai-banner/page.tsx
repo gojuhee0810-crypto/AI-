@@ -11,6 +11,7 @@ import { Step2CopyPanel } from '@/components/ai-banner/Step2CopyPanel';
 import { Step3ReviewPanel } from '@/components/ai-banner/Step3ReviewPanel';
 import { PreviewPanel } from '@/components/ai-banner/PreviewPanel';
 import { Toast } from '@/components/ai-banner/Toast';
+import { inputClass } from '@/components/ai-banner/fields';
 import { clearFlowState, loadFlowState, saveFlowState } from '@/lib/flow-state-storage';
 import {
   INITIAL_FLOW_STATE,
@@ -32,8 +33,6 @@ export default function AiBannerStudioPage() {
   // 마운트 이후에 불러온다. 불러오기 전에는 저장하지 않는다 — 순서가 뒤바뀌면
   // 복원되기 직전에 빈 상태로 덮어써서 오히려 작업을 날린다.
   const [isHydrated, setIsHydrated] = useState(false);
-  // 소재 이름을 건너뛰고 다음 필드를 건드렸을 때만 켠다. 처음부터 빨갛게 띄우지 않는다.
-  const [showNameError, setShowNameError] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // 제출을 시도한 뒤에만 빈 필수 칸을 붉게 만든다. 처음부터 빨간 화면을 보여주면
   // 아직 하지도 않은 일을 잘못했다고 말하는 셈이다.
@@ -51,22 +50,21 @@ export default function AiBannerStudioPage() {
     saveFlowState(state);
   }, [state, isHydrated]);
 
-  const patch = (next: Partial<AiBannerFlowState>) => setState((s) => ({ ...s, ...next }));
+  const patch = (next: Partial<AiBannerFlowState>) => {
+    // 이미지 유형을 바꾸면 필요한 칸이 통째로 달라진다(오브젝트 명칭 ↔ 제품 업로드).
+    // 앞서 켜둔 빨간 표시를 그대로 두면 방금 나타난 칸이 손대기도 전에 붉어진다.
+    if (next.imageType !== undefined) setShowErrors(false);
+    setState((s) => ({ ...s, ...next }));
+  };
 
   function handleReset() {
     setState(INITIAL_FLOW_STATE);
-    setShowNameError(false);
     setShowErrors(false);
     clearFlowState();
   }
 
-  /** 소재 이름을 건너뛰고 이미지 유형을 고르려 할 때 — 에러를 띄우고 그쪽으로 데려간다. */
-  function handleRequireMaterialName() {
-    setShowNameError(true);
-    materialNameRef.current?.focus();
-  }
-
   const canGoNext = isStepComplete(state, state.step);
+  const hasNameError = showErrors && !state.materialName.trim();
 
   /**
    * 다음 단계 버튼. 아직 못 넘어가는 상태여도 누를 수 있게 둔다.
@@ -78,7 +76,8 @@ export default function AiBannerStudioPage() {
     if (!canGoNext) {
       setShowErrors(true);
       setToast('필수 항목을 입력해주세요');
-      if (state.step === 1 && !state.materialName.trim()) handleRequireMaterialName();
+      // 비어 있는 첫 칸으로 데려간다 — 화면이 길면 어디가 문제인지 찾아 헤맨다.
+      if (state.step === 1 && !state.materialName.trim()) materialNameRef.current?.focus();
       return;
     }
     setShowErrors(false); // 단계를 넘어가면 앞 단계의 빨간 표시를 들고 가지 않는다
@@ -131,19 +130,10 @@ export default function AiBannerStudioPage() {
                 maxLength={MATERIAL_NAME_LIMIT}
                 placeholder="소재 이름을 입력해주세요"
                 value={state.materialName}
-                aria-invalid={showNameError || undefined}
-                aria-describedby={showNameError ? 'materialNameError' : undefined}
-                onChange={(e) => {
-                  patch({ materialName: e.target.value });
-                  if (e.target.value.trim()) setShowNameError(false);
-                }}
-                // 에러일 때는 테두리만이 아니라 배경과 placeholder까지 붉게 물린다.
-                // 테두리 1px만 바꾸면 화면이 길 때 훑어봐도 어느 칸이 비었는지 안 보인다.
-                className={`mt-3 h-12 w-full rounded-lg border px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none ${
-                  showNameError
-                    ? 'border-required bg-[#fff4f4] placeholder:text-required'
-                    : 'border-line bg-surface placeholder:text-ink-faint focus:border-ink'
-                }`}
+                aria-invalid={hasNameError || undefined}
+                aria-describedby={hasNameError ? 'materialNameError' : undefined}
+                onChange={(e) => patch({ materialName: e.target.value })}
+                className={inputClass(hasNameError, 'mt-3 h-12')}
               />
               <div className="mt-1.5 flex items-start justify-between gap-4 px-4">
                 <p
@@ -151,7 +141,7 @@ export default function AiBannerStudioPage() {
                   role="alert"
                   className="text-[12px] leading-[19px] text-required"
                 >
-                  {showNameError ? '필수 입력 항목이에요.' : ''}
+                  {hasNameError ? '필수 입력 항목이에요.' : ''}
                 </p>
                 <p className="text-[12px] leading-[19px] tabular-nums text-ink">
                   {state.materialName.length}/{MATERIAL_NAME_LIMIT}
@@ -182,7 +172,6 @@ export default function AiBannerStudioPage() {
               <Step1ImagePanel
                 state={state}
                 patch={patch}
-                onRequireMaterialName={handleRequireMaterialName}
                 showErrors={showErrors}
               />
             )}
