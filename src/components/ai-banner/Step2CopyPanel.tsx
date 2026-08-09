@@ -8,7 +8,7 @@
 // 붙였다(docs/guides/ui-polish-checklist.md 참고).
 
 import { useState } from 'react';
-import type { AiBannerFlowState } from '@/types/banner-flow';
+import { resolveObjectTag, type AiBannerFlowState } from '@/types/banner-flow';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import type {
   GenerateCopyRequest,
@@ -46,7 +46,8 @@ export function Step2CopyPanel({ state, patch }: Props) {
     setError(null);
     try {
       const body: GenerateCopyRequest = {
-        objectTag: state.primaryObject,
+        // 제품 이미지 경로에는 오브젝트 명칭이 없어 소재 이름으로 대신한다.
+        objectTag: resolveObjectTag(state),
         benefit: state.benefit,
       };
       const res = await fetch('/api/generate-copy', {

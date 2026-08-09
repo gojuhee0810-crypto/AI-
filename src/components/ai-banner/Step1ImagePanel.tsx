@@ -11,7 +11,13 @@
 // 막히는 것보다 첫 필드에서 막히는 편이 낫다.
 
 import { useId, useRef, useState } from 'react';
-import type { AiBannerFlowState, ImageSourceType } from '@/types/banner-flow';
+import {
+  BADGE_STYLES,
+  BADGE_TEXT_LIMIT,
+  type AiBannerFlowState,
+  type BadgeStyle,
+  type ImageSourceType,
+} from '@/types/banner-flow';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import type {
   GenerateImageRequest,
@@ -106,6 +112,7 @@ function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?
 
 export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) {
   const objectId = useId();
+  const badgeTextId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -430,6 +437,59 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
             </div>
           ))}
         </div>
+
+        {/* 혜택 배지 — 문구와 색을 정한다. 미리보기에 바로 반영된다. */}
+        {state.accentType === 'badge' && (
+          <div className="flex flex-col gap-4 rounded-lg border border-line p-5">
+            <div>
+              <label htmlFor={badgeTextId} className="text-[14px] leading-[22px] text-ink">
+                배지 문구
+              </label>
+              <input
+                id={badgeTextId}
+                type="text"
+                maxLength={BADGE_TEXT_LIMIT}
+                placeholder="예) 최대 50%"
+                value={state.badgeText}
+                onChange={(e) => patch({ badgeText: e.target.value })}
+                className="mt-2 h-11 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+              />
+              <p className="mt-1.5 px-4 text-right text-[12px] leading-[19px] tabular-nums text-ink-muted">
+                {state.badgeText.length}/{BADGE_TEXT_LIMIT}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[14px] leading-[22px] text-ink">배지 색상</span>
+              <div className="flex items-center gap-2">
+                {(Object.keys(BADGE_STYLES) as BadgeStyle[]).map((key) => {
+                  const isSelected = state.badgeStyle === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      aria-pressed={isSelected}
+                      onClick={() => patch({ badgeStyle: key })}
+                      className={`flex min-h-9 items-center gap-2 rounded-[24px] border px-3 transition-[border-color,scale] duration-150 active:scale-[0.96] ${
+                        isSelected ? 'border-ink' : 'border-line hover:border-ink-muted'
+                      }`}
+                    >
+                      <span
+                        aria-hidden
+                        className={`rounded-full px-2 py-0.5 text-[12px] leading-[19px] font-medium ${BADGE_STYLES[key].className}`}
+                      >
+                        {state.badgeText.trim() || '배지'}
+                      </span>
+                      <span className="text-[13px] leading-[20px] text-ink-muted">
+                        {BADGE_STYLES[key].label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 로고 업로드 */}
         {state.accentType === 'logo' && (

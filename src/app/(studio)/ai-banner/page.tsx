@@ -11,7 +11,11 @@ import { Step2CopyPanel } from '@/components/ai-banner/Step2CopyPanel';
 import { Step3ReviewPanel } from '@/components/ai-banner/Step3ReviewPanel';
 import { PreviewPanel } from '@/components/ai-banner/PreviewPanel';
 import { clearFlowState, loadFlowState, saveFlowState } from '@/lib/flow-state-storage';
-import { INITIAL_FLOW_STATE, type AiBannerFlowState } from '@/types/banner-flow';
+import {
+  INITIAL_FLOW_STATE,
+  isStepComplete,
+  type AiBannerFlowState,
+} from '@/types/banner-flow';
 
 /** 단계별 Primary 버튼 문구 — Figma 실측 */
 const NEXT_LABEL: Record<1 | 2 | 3, string> = {
@@ -55,12 +59,7 @@ export default function AiBannerStudioPage() {
     materialNameRef.current?.focus();
   }
 
-  const canGoNext =
-    state.step === 1
-      ? state.images.length > 0
-      : state.step === 2
-        ? state.selectedCopyIndex !== null
-        : true;
+  const canGoNext = isStepComplete(state, state.step);
 
   return (
     // 완료한 단계로만 되돌아갈 수 있다. 앞 단계 건너뛰기는 막는다.

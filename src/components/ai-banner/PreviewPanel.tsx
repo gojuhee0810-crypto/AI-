@@ -4,10 +4,16 @@
 // TODO: 앱 화면 목업 이미지(PNG)를 받으면 배경으로 깔고 배너 영역만 오버레이하는
 // 방식으로 교체 — 지금은 DOM으로 근사치 재현.
 
-import type { AiBannerFlowState } from '@/types/banner-flow';
+import {
+  BADGE_STYLES,
+  resolveBannerImageUrl,
+  type AiBannerFlowState,
+} from '@/types/banner-flow';
 
 export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
-  const bannerImage = state.images.find((img) => img.style === 'style-2-2d-flat') ?? state.images[0];
+  // 그래픽이면 고른 스타일, 제품이면 업로드한 이미지 — resolveBannerImageUrl이 판단한다.
+  const bannerImageUrl = resolveBannerImageUrl(state);
+  const showBadge = state.accentType === 'badge' && state.badgeText.trim().length > 0;
   const selectedCopy =
     state.selectedCopyIndex !== null ? state.copyRecommendations[state.selectedCopyIndex] : null;
 
@@ -30,16 +36,30 @@ export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
           {/* 실제 Fit 배너가 노출되는 위치 — 지금 만들고 있는 소재 */}
           <div className="flex items-center gap-2 rounded-xl bg-[#f7f8fa] p-3">
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[11px] text-ink-muted">
-                {selectedCopy?.subtitle || '서브타이틀 입력해주세요'} · AD
+              <div className="flex items-center gap-1">
+                {/* 혜택 배지 — 강조 요소로 배지를 고르고 문구를 넣었을 때만 */}
+                {showBadge && (
+                  <span
+                    className={`shrink-0 rounded-full px-1.5 py-px text-[10px] leading-[15px] font-medium ${BADGE_STYLES[state.badgeStyle].className}`}
+                  >
+                    {state.badgeText.trim()}
+                  </span>
+                )}
+                <span className="truncate text-[11px] text-ink-muted">
+                  {selectedCopy?.subtitle || '서브타이틀 입력해주세요'} · AD
+                </span>
               </div>
               <div className="truncate text-sm font-bold text-ink">
                 {selectedCopy?.maintitle || '메인타이틀 입력해주세요'}
               </div>
             </div>
-            {bannerImage ? (
+            {bannerImageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={bannerImage.imageUrl} alt="배너 이미지" width={48} height={48} className="shrink-0" />
+              <img
+                src={bannerImageUrl}
+                alt="배너 이미지"
+                className="size-12 shrink-0 rounded-lg object-cover"
+              />
             ) : (
               <div className="h-12 w-12 shrink-0 rounded-lg bg-[#e9ecef]" aria-hidden />
             )}
