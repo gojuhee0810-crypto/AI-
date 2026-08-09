@@ -217,12 +217,14 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
         </div>
         <div className="flex flex-col gap-2">
           {IMAGE_TYPES.map((opt) => (
+            // 선택 표시는 검정 테두리 대신 브랜드 옐로우 링 + 옅은 배경으로 통일한다.
+            // 검정 테두리는 인풋 포커스와 구분이 안 돼 무엇이 선택된 건지 모호했다.
             <label
               key={opt.value}
-              className={`flex h-12 items-center gap-2 rounded-lg border px-4 transition-colors duration-150 ${
+              className={`flex h-12 items-center gap-2 rounded-lg px-4 transition-[background-color,box-shadow] duration-150 ${
                 state.imageType === opt.value
-                  ? 'border-ink'
-                  : 'border-line hover:border-ink-muted'
+                  ? 'bg-brand/12 shadow-[0_0_0_2px_var(--color-brand)]'
+                  : 'bg-surface shadow-[0_0_0_1px_var(--color-line)] hover:shadow-[0_0_0_1px_var(--color-ink-muted)]'
               } ${hasMaterialName ? 'cursor-pointer' : 'cursor-not-allowed'}`}
             >
               <input
@@ -287,28 +289,51 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
 
             {state.isGeneratingImages && <ProgressStatus messages={PROGRESS_MESSAGES} />}
 
-            <div className="rounded-lg border border-line p-5">
-              <div className="grid grid-cols-2 gap-4">
+            {/* 생성 전 빈 상태 — 무엇을 하면 여기가 채워지는지 알려준다 */}
+            {!hasResult && !state.isGeneratingImages ? (
+              <div className="flex min-h-[200px] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line bg-sidebar px-6 text-center">
+                <span aria-hidden className="text-[28px] leading-none opacity-40">
+                  ✦
+                </span>
+                <p className="text-[16px] leading-[26px] text-ink">
+                  아직 만든 이미지가 없어요
+                </p>
+                <p className="text-[14px] leading-[22px] text-ink-muted">
+                  오브젝트 명칭을 입력하고 생성 버튼을 눌러주세요
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
                 {STYLE_ORDER.map((style) => {
                   const image = state.images.find((img) => img.style === style);
                   const isRegenerating = state.regeneratingStyle === style;
                   const isSelected = state.selectedImageStyle === style;
+                  const isBusy = state.isGeneratingImages || isRegenerating;
+
                   return (
-                    <div key={style} className="flex flex-col gap-3">
-                      <label
-                        className={`flex items-center gap-2 ${
-                          image ? 'cursor-pointer' : 'cursor-default'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="selectedImageStyle"
-                          value={style}
-                          checked={isSelected}
-                          disabled={!image}
-                          onChange={() => patch({ selectedImageStyle: style })}
-                          className="sr-only"
-                        />
+                    // 카드 전체가 선택 영역이다. 라디오·라벨만 누를 수 있으면
+                    // 이미지를 눌러도 반응이 없어 고장으로 읽힌다.
+                    <label
+                      key={style}
+                      className={`group relative flex flex-col gap-3 rounded-xl p-3 transition-[background-color,box-shadow] duration-150 ${
+                        image ? 'cursor-pointer' : 'cursor-default'
+                      } ${
+                        isSelected
+                          ? 'bg-brand/12 shadow-[0_0_0_2px_var(--color-brand),0_4px_12px_rgba(0,0,0,0.06)]'
+                          : 'bg-surface shadow-[0_0_0_1px_var(--color-line)] hover:shadow-[0_0_0_1px_var(--color-ink-muted)]'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="selectedImageStyle"
+                        value={style}
+                        checked={isSelected}
+                        disabled={!image}
+                        onChange={() => patch({ selectedImageStyle: style })}
+                        className="sr-only"
+                      />
+
+                      <div className="flex items-center gap-2">
                         <Radio checked={isSelected} />
                         <span
                           className={`text-[16px] leading-[26px] ${
@@ -317,36 +342,48 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                         >
                           {STYLE_LABEL[style]}
                         </span>
-                      </label>
+                        {isSelected && (
+                          <span className="ml-auto text-[13px] leading-[20px] font-medium text-ink">
+                            선택됨
+                          </span>
+                        )}
+                      </div>
 
-                      {state.isGeneratingImages || isRegenerating ? (
-                        <Shimmer className="h-[120px] w-full rounded-lg" />
+                      {isBusy ? (
+                        <Shimmer className="h-[132px] w-full rounded-lg" />
                       ) : image ? (
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="flex h-[120px] w-full items-center justify-center">
+                        <>
+                          {/* 투명 PNG라 흰 배경에선 경계가 안 보인다 — 체커보드를 깐다 */}
+                          <div className="checkerboard flex h-[132px] w-full items-center justify-center overflow-hidden rounded-lg">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={image.imageUrl}
                               alt={STYLE_LABEL[style]}
-                              className="max-h-full max-w-full object-contain"
+                              className="max-h-full max-w-full object-contain transition-transform duration-200 group-hover:scale-105"
                             />
                           </div>
                           <button
                             type="button"
-                            onClick={() => handleRegenerate(style)}
-                            className="min-h-8 rounded-[24px] border border-line px-3 text-[13px] leading-[20px] font-medium text-ink-muted transition-[background-color,scale] duration-150 hover:bg-fill hover:text-ink active:scale-[0.96]"
+                            disabled={isBusy}
+                            onClick={(e) => {
+                              e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
+                              handleRegenerate(style);
+                            }}
+                            className="min-h-8 self-center rounded-[24px] border border-line bg-surface px-3 text-[13px] leading-[20px] font-medium text-ink-muted transition-[background-color,color,scale] duration-150 hover:bg-fill hover:text-ink active:scale-[0.96] disabled:cursor-not-allowed"
                           >
                             다시 생성하기
                           </button>
-                        </div>
+                        </>
                       ) : (
-                        <div className="h-[120px]" aria-hidden />
+                        <div className="flex h-[132px] items-center justify-center rounded-lg bg-fill text-[13px] leading-[20px] text-ink-muted">
+                          생성되지 않았어요
+                        </div>
                       )}
-                    </div>
+                    </label>
                   );
                 })}
               </div>
-            </div>
+            )}
 
             {state.partialErrors.map((err) => (
               <p

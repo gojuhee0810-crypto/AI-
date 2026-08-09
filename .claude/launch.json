@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--", "--port", "3100"],
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["-c", "MOCK_AI=1 npm run dev -- --port 3100"],
       "port": 3100
     }
   ]

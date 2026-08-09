@@ -12,6 +12,7 @@ import { findLibraryAsset } from '@/lib/asset-library';
 import { findStyle2LibraryAsset } from '@/lib/style2-asset-library';
 import { generateStyle1Dynamic } from '@/lib/style1-generate';
 import { generateStyle2Dynamic } from '@/lib/style2-generate';
+import { isMockMode, mockDelay, mockImages } from '@/lib/mock-mode';
 import type {
   GenerateImageRequest,
   GenerateImageResponse,
@@ -78,6 +79,14 @@ export async function POST(request: Request): Promise<NextResponse<GenerateImage
   const stylesToGenerate: ImageStyleKey[] = regenerateStyle
     ? [regenerateStyle]
     : ['style-1-3d-basic', 'style-2-2d-flat'];
+
+  // 라이브러리에 있는 오브젝트는 원래 외부 호출이 없지만, 미등록 오브젝트와
+  // "다시 생성하기"는 Gemini/OpenAI를 부른다. MOCK_AI=1이면 전부 건너뛴다.
+  if (isMockMode()) {
+    console.warn('[generate-image] MOCK_AI=1 — 실제 호출 없이 목업 이미지를 반환합니다.');
+    await mockDelay();
+    return NextResponse.json({ images: mockImages(stylesToGenerate) });
+  }
 
   async function generateOneStyle(style: ImageStyleKey): Promise<GeneratedImage> {
     if (style === 'style-1-3d-basic') {

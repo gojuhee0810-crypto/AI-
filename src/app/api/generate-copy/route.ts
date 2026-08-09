@@ -3,6 +3,7 @@
 
 import { NextResponse } from 'next/server';
 import { generateCopy } from '@/lib/copy-generate';
+import { isMockMode, mockCopyResponse, mockDelay } from '@/lib/mock-mode';
 import type { GenerateCopyRequest, GenerateCopyResponse, GenerateCopyErrorResponse } from '@/types/copy-generation';
 
 function errorResponse(
@@ -28,6 +29,14 @@ export async function POST(request: Request): Promise<NextResponse<GenerateCopyR
   }
   if (!benefit || typeof benefit !== 'string' || !benefit.trim()) {
     return errorResponse('INVALID_INPUT', 'benefit은 필수입니다.', 400);
+  }
+
+  // 화면 작업 중에는 같은 화면을 수십 번 돌리게 되는데 카피는 매번 Claude를 부른다.
+  // MOCK_AI=1이면 호출 없이 같은 모양의 응답을 돌려준다(src/lib/mock-mode.ts).
+  if (isMockMode()) {
+    console.warn('[generate-copy] MOCK_AI=1 — 실제 호출 없이 목업 응답을 반환합니다.');
+    await mockDelay();
+    return NextResponse.json(mockCopyResponse(benefit));
   }
 
   try {
