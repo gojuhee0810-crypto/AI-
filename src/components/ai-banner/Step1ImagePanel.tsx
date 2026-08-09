@@ -19,6 +19,7 @@ import {
   type ImageSourceType,
 } from '@/types/banner-flow';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
+import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
 import type {
   GenerateImageRequest,
   GenerateImageResponse,
@@ -61,34 +62,6 @@ const PROGRESS_MESSAGES = [
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 /** 로고는 매체 가이드상 1MB 이하 (docs/guides/admin-design-system.md) */
 const MAX_LOGO_BYTES = 1024 * 1024;
-
-/** ⓘ 아이콘에 마우스를 올리거나 포커스하면 뜨는 검정 말풍선. */
-function InfoTooltip({ text }: { text: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <span className="relative inline-flex">
-      <button
-        type="button"
-        aria-label={text}
-        onMouseEnter={() => setIsOpen(true)}
-        onMouseLeave={() => setIsOpen(false)}
-        onFocus={() => setIsOpen(true)}
-        onBlur={() => setIsOpen(false)}
-        className="flex size-[18px] items-center justify-center rounded-full border border-ink-muted text-[11px] leading-none text-ink-muted"
-      >
-        i
-      </button>
-      {isOpen && (
-        <span
-          role="tooltip"
-          className="absolute top-1/2 left-[calc(100%+8px)] z-10 -translate-y-1/2 rounded-lg bg-ink px-2.5 py-2 text-[14px] leading-[22px] font-medium whitespace-nowrap text-white"
-        >
-          {text}
-        </span>
-      )}
-    </span>
-  );
-}
 
 /** 라디오 24px. 선택하면 브랜드 옐로우로 채운다(디자인 시스템 §6-3). */
 function Radio({ checked }: { checked: boolean }) {
@@ -234,7 +207,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
   }
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       {/* 이미지 유형 */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
@@ -243,15 +216,13 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
         </div>
         <div className="flex flex-col gap-2">
           {IMAGE_TYPES.map((opt) => (
-            // 선택 표시는 검정 테두리 대신 브랜드 옐로우 링 + 옅은 배경으로 통일한다.
-            // 검정 테두리는 인풋 포커스와 구분이 안 돼 무엇이 선택된 건지 모호했다.
+            // 선택 표시는 라디오 하나로만 한다. 테두리 색까지 같이 바뀌면 인풋 포커스와
+            // 뒤섞여 오히려 무엇이 선택된 건지 흐려진다. 호버는 연한 회색 배경만.
             <label
               key={opt.value}
-              className={`flex h-12 items-center gap-2 rounded-lg px-4 transition-[background-color,box-shadow] duration-150 ${
-                state.imageType === opt.value
-                  ? 'bg-surface shadow-[0_0_0_2px_var(--color-brand)]'
-                  : 'bg-surface shadow-[0_0_0_1px_var(--color-line)] hover:shadow-[0_0_0_1px_var(--color-ink-muted)]'
-              } ${hasMaterialName ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+              className={`flex h-12 items-center gap-2 rounded-lg border border-line bg-surface px-4 transition-colors duration-150 hover:bg-sidebar ${
+                hasMaterialName ? 'cursor-pointer' : 'cursor-not-allowed'
+              }`}
             >
               <input
                 type="radio"
@@ -349,12 +320,8 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                     // 이미지를 눌러도 반응이 없어 고장으로 읽힌다.
                     <label
                       key={style}
-                      className={`group relative flex flex-col gap-3 rounded-xl p-3 transition-[background-color,box-shadow] duration-150 ${
+                      className={`group relative flex flex-col gap-3 rounded-xl border border-line bg-surface p-3 transition-colors duration-150 hover:bg-sidebar ${
                         image ? 'cursor-pointer' : 'cursor-default'
-                      } ${
-                        isSelected
-                          ? 'bg-surface shadow-[0_0_0_2px_var(--color-brand),0_4px_12px_rgba(0,0,0,0.06)]'
-                          : 'bg-surface shadow-[0_0_0_1px_var(--color-line)] hover:shadow-[0_0_0_1px_var(--color-ink-muted)]'
                       }`}
                     >
                       <input

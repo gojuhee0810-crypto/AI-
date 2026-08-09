@@ -11,6 +11,7 @@
 import { useId, useState } from 'react';
 import { resolveObjectTag, type AiBannerFlowState } from '@/types/banner-flow';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
+import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
 import type {
   GenerateCopyRequest,
   GenerateCopyResponse,
@@ -35,34 +36,6 @@ const PROGRESS_MESSAGES = [
 const BENEFIT_LIMIT = 25;
 const SUBTITLE_LIMIT = 15;
 const MAINTITLE_LIMIT = 14;
-
-/** ⓘ 아이콘에 마우스를 올리거나 포커스하면 뜨는 검정 말풍선. */
-function InfoTooltip({ text }: { text: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-  return (
-    <span className="relative inline-flex">
-      <button
-        type="button"
-        aria-label={text}
-        onMouseEnter={() => setIsOpen(true)}
-        onMouseLeave={() => setIsOpen(false)}
-        onFocus={() => setIsOpen(true)}
-        onBlur={() => setIsOpen(false)}
-        className="flex size-[18px] items-center justify-center rounded-full border border-ink-muted text-[11px] leading-none text-ink-muted"
-      >
-        i
-      </button>
-      {isOpen && (
-        <span
-          role="tooltip"
-          className="absolute top-1/2 left-[calc(100%+8px)] z-10 -translate-y-1/2 rounded-lg bg-ink px-2.5 py-2 text-[14px] leading-[22px] font-medium whitespace-nowrap text-white"
-        >
-          {text}
-        </span>
-      )}
-    </span>
-  );
-}
 
 /** 라디오 24px. 선택하면 브랜드 옐로우로 채운다(디자인 시스템 §6-3). */
 function Radio({ checked }: { checked: boolean }) {
@@ -141,7 +114,7 @@ export function Step2CopyPanel({ state, patch }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-10">
+    <div className="flex flex-col gap-8">
       {/* 캠페인 혜택 */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
@@ -226,11 +199,9 @@ export function Step2CopyPanel({ state, patch }: Props) {
             return (
               <label
                 key={rec.pattern}
-                className={`flex cursor-pointer flex-col gap-4 rounded-lg bg-surface p-5 transition-[box-shadow] duration-150 ${
-                  isSelected
-                    ? 'shadow-[0_0_0_2px_var(--color-brand)]'
-                    : 'shadow-[0_0_0_1px_var(--color-line)] hover:shadow-[0_0_0_1px_var(--color-ink-muted)]'
-                }`}
+                // 선택 표시는 라디오 하나로만. 테두리 색까지 바뀌면 인풋 포커스와
+                // 뒤섞여 오히려 흐려진다. 호버는 연한 회색 배경만.
+                className="flex cursor-pointer flex-col gap-4 rounded-lg border border-line bg-surface p-5 transition-colors duration-150 hover:bg-sidebar"
               >
                 <input
                   type="radio"

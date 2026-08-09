@@ -29,10 +29,10 @@ const BANNER_SLOT = {
  * 있어 지울 수 없으므로 흰 사각형으로 덮는다(그 자리 배경도 흰색이다).
  */
 const NEW_FEED_PATCH = {
-  left: '33%',
-  top: '81.5%',
-  width: '29%',
-  height: '5.5%',
+  left: '34%',
+  top: '80.3%',
+  width: '30%',
+  height: '7.5%',
 } as const;
 
 export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
@@ -48,7 +48,9 @@ export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
       {/* 다른 필드 라벨과 같은 크기·굵기(디자인 시스템 Field label 18/28 Medium) */}
       <h2 className="text-[18px] leading-7 font-medium text-ink">미리보기</h2>
 
-      <div className="relative mx-auto w-[340px]">
+      {/* 목업 폭은 미리보기 전체가 뷰포트(1440×900 기준) 안에 들어가도록 잡았다.
+          이보다 크면 sticky가 무의미해져 스크롤할 때마다 미리보기가 잘린다. */}
+      <div className="relative mx-auto w-[280px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/preview/pay-app-mockup.png"
