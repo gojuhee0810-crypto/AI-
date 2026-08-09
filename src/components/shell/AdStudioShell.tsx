@@ -86,15 +86,9 @@ export function AdStudioShell({ currentStep, onStepSelect, children }: Props) {
             </div>
           </nav>
 
-          {/* 접기 핸들 — 사이드바 우측 가장자리에 붙는 반원형 탭 */}
-          <button
-            aria-label="사이드바 접기"
-            className="absolute top-1/2 right-0 flex h-11 w-[30px] -translate-y-1/2 items-center justify-center rounded-l-xl bg-white text-ink-muted shadow-[-5px_0_15px_0_rgba(0,0,0,0.02)] transition-[color,scale] duration-150 hover:text-ink active:scale-[0.96]"
-          >
-            <span aria-hidden className="text-sm">
-              ‹
-            </span>
-          </button>
+          {/* 사이드바 접기 핸들은 뺐다(2026-08-09). Figma 광고센터 UI에는 있지만
+              접는 동작을 붙이지 않아 눌러도 아무 일도 일어나지 않았다 —
+              반응 없는 버튼은 없는 버튼보다 나쁘다. 접기 기능을 만들 때 같이 되살린다. */}
         </aside>
 
         <main className="min-w-0 flex-1">{children}</main>

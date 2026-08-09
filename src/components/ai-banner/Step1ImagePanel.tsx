@@ -57,9 +57,31 @@ const PROGRESS_MESSAGES = [
   '배경을 정리하고 마무리하는 중이에요',
 ];
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+/** 화면에 적힌 규격과 같은 값이어야 한다 — 다르면 "1MB"라 써놓고 5MB를 받는다. */
+const MAX_UPLOAD_BYTES = 1024 * 1024;
 /** 로고는 매체 가이드상 1MB 이하 (docs/guides/admin-design-system.md) */
 const MAX_LOGO_BYTES = 1024 * 1024;
+
+/**
+ * 업로드 규격 목록 — 디자인 시스템 §6-5 "목록 안내문".
+ *
+ * 한 줄에 가운뎃점으로 이어 붙이면 어디까지가 형식이고 어디부터가 용량인지 눈이
+ * 매번 다시 갈라야 한다. 항목을 세로로 세우면 필요한 줄만 골라 본다.
+ */
+function SpecList({ items }: { items: string[] }) {
+  return (
+    <ul className="flex flex-col gap-0.5">
+      {items.map((spec) => (
+        <li key={spec} className="flex items-start gap-2 text-[14px] leading-[22px] text-ink">
+          <span aria-hidden className="pt-2 text-[6px] leading-none">
+            ●
+          </span>
+          {spec}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
@@ -105,7 +127,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
       return;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
-      setUploadError('5MB 이하 파일만 올릴 수 있어요.');
+      setUploadError('1MB 이하 파일만 올릴 수 있어요.');
       return;
     }
 
@@ -388,7 +410,10 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex min-h-[220px] w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-line bg-sidebar p-6 transition-colors duration-150 hover:border-ink-muted"
+            // 높이(240)와 이미지 영역(132)은 그래픽 아이콘 결과 카드의 실측값이다.
+            // 두 경로가 같은 자리를 다른 크기로 채우면 유형을 바꿀 때마다 아래 내용이
+            // 위아래로 튄다.
+            className="flex min-h-[240px] w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-line bg-sidebar p-3 transition-colors duration-150 hover:border-ink-muted"
           >
             {state.productImageUrl ? (
               <>
@@ -396,7 +421,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                 <img
                   src={state.productImageUrl}
                   alt="업로드한 제품 이미지"
-                  className="max-h-[150px] max-w-full object-contain"
+                  className="max-h-[132px] max-w-full object-contain"
                 />
                 <span className="text-[14px] leading-[22px] text-ink-muted">
                   클릭하면 다른 이미지로 바꿔요
@@ -411,12 +436,19 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                   ⬆
                 </span>
                 <span className="text-[16px] leading-[26px] text-ink">클릭하여 이미지 업로드</span>
-                <span className="text-[14px] leading-[22px] text-ink-muted">
-                  PNG, JPG (최대 5MB)
+                {/* 규격은 두 줄로 나눈다. 한 줄에 몰면 어디까지가 크기고 어디부터가
+                    용량인지 눈이 매번 갈라야 한다. 형식은 한 단계 작게 둔다 —
+                    셋 중 가장 덜 헷갈리는 항목이다. */}
+                <span className="flex flex-col items-center gap-0.5">
+                  <span className="text-[14px] leading-[22px] text-ink-muted">
+                    400 × 400(px), 1MB
+                  </span>
+                  <span className="text-[12px] leading-[19px] text-ink-faint">PNG</span>
                 </span>
               </>
             )}
           </button>
+
           {uploadError && (
             <p className="text-[14px] leading-[22px] text-required">{uploadError}</p>
           )}
@@ -536,19 +568,9 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
                     />
                   </span>
                 )}
-                <ul className="flex flex-col gap-0.5">
-                  {['파일 형식 : PNG', '용량 : 1MB 이하', '1371 x 1218px'].map((spec) => (
-                    <li
-                      key={spec}
-                      className="flex items-start gap-2 text-[14px] leading-[22px] text-ink"
-                    >
-                      <span aria-hidden className="pt-2 text-[6px] leading-none">
-                        ●
-                      </span>
-                      {spec}
-                    </li>
-                  ))}
-                </ul>
+                <SpecList
+                  items={['파일 형식 : PNG', '크기 : 1371 × 1218px', '용량 : 1MB 이하']}
+                />
               </div>
               <button
                 type="button"

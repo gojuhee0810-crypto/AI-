@@ -11,14 +11,20 @@ import { resolveBannerImageUrl, type AiBannerFlowState } from '@/types/banner-fl
 
 /**
  * "새 피드" 플로팅 버튼을 덮는 자리 — 하단 목업 이미지(1125×646) 기준 비율.
- * 원본 절대좌표 x 400~740 / y 2010~2152를 잘라낸 위치로 환산한 값이다.
+ *
+ * 두 조각으로 나눈다. 하나의 사각형으로 덮으면 알약의 그림자를 다 지우려다
+ * 오른쪽 "신한은행 대출 상환"의 첫 글자까지 먹는다. 아래쪽은 그 글자 앞(x 727)에서
+ * 멈추고, 위쪽만 배지까지 넓게 덮는다.
+ *
+ * 왼쪽 끝은 "3일 후"의 '후'가 시작되는 x 370에 맞췄다. 알약이 이미 '후'의 오른쪽을
+ * 가리고 있어서, 어중간하게 덮으면 글자 반쪽이 남아 깨진 화면처럼 보인다.
  */
-const NEW_FEED_PATCH = {
-  left: '35.6%',
-  top: '34.1%',
-  width: '30.2%',
-  height: '22.0%',
-} as const;
+const NEW_FEED_PATCHES = [
+  // 알약 윗부분 + "9+" 배지
+  { left: '32.9%', top: '31.7%', width: '34.8%', height: '18.1%' },
+  // 알약 아랫부분 — 오른쪽 텍스트 앞에서 멈춘다
+  { left: '32.9%', top: '49.8%', width: '31.1%', height: '7.9%' },
+] as const;
 
 export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
   // 그래픽이면 고른 스타일, 제품이면 업로드한 이미지 — resolveBannerImageUrl이 판단한다.
@@ -84,7 +90,10 @@ export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={bannerImageUrl} alt="배너 이미지" className="size-full object-contain" />
             ) : (
-              <div className="size-full rounded-lg bg-[#dfe4e9]" aria-hidden />
+              // 컨테이너를 꽉 채우지 않는다. 생성 아이콘은 SVG 안쪽 여백이 있어
+              // 실제로는 컨테이너의 3분의 2쯤만 차지하는데, 빈 표시가 100%를 채우면
+              // 이미지를 넣기 전이 더 커 보여 자리 크기를 잘못 짐작하게 된다.
+              <div className="absolute inset-[16%] rounded-lg bg-[#dfe4e9]" aria-hidden />
             )}
             {showLogo && (
               // eslint-disable-next-line @next/next/no-img-element
@@ -119,9 +128,11 @@ export function PreviewPanel({ state }: { state: AiBannerFlowState }) {
             className="w-full rounded-b-[24px]"
           />
           {/* 목업에 구워진 "새 피드" 플로팅 버튼 가리기. 우리 소재와 무관한 앱 UI인데
-              배너 바로 아래라 시선을 끈다. 알약 바깥으로 넘기면 뒤의 금융일정 카드까지
-              지워지므로 버튼 실측 범위에만 맞춘다. */}
-          <div className="absolute bg-white" style={NEW_FEED_PATCH} aria-hidden />
+              배너 바로 아래라 시선을 끈다. 그 자리 배경이 흰 카드라 흰 사각형으로
+              덮으면 자연스럽다. */}
+          {NEW_FEED_PATCHES.map((patch) => (
+            <div key={patch.top} className="absolute bg-white" style={patch} aria-hidden />
+          ))}
         </div>
 
         {/* 흰색 딤 — 앱 UI를 흐리게 눌러 지금 만드는 소재에 시선이 가게 한다.
