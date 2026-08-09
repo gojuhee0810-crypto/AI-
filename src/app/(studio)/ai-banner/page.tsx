@@ -64,7 +64,11 @@ export default function AiBannerStudioPage() {
   return (
     // 완료한 단계로만 되돌아갈 수 있다. 앞 단계 건너뛰기는 막는다.
     <AdStudioShell currentStep={state.step} onStepSelect={(step) => patch({ step })}>
-      <div className="flex min-h-full flex-col">
+      {/* 본문 폭을 1440 설계 기준(LNB 250을 뺀 1190)에서 멈춘다.
+          폼 칸이 고정이라 상한이 없으면 남는 폭을 미리보기가 전부 먹는다 —
+          1728 창에서 미리보기가 796px까지 부풀어 설계(523)와 딴판이 됐다.
+          넓은 화면에서는 오른쪽을 비우는 편이 낫다. */}
+      <div className="flex min-h-full w-full max-w-[1190px] flex-col">
         <div className="px-12 pt-8">
           <h1 className="text-[32px] leading-[45px] font-medium tracking-[-0.4px] text-ink">
             AI 광고 소재 만들기
