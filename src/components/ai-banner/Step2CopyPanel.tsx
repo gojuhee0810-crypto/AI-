@@ -105,7 +105,7 @@ export function Step2CopyPanel({ state, patch }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-[42px]">
       {/* 캠페인 혜택 */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center gap-2">

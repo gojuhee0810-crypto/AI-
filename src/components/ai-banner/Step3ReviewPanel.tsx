@@ -231,7 +231,7 @@ export function Step3ReviewPanel({ state, patch }: Props) {
         : IMAGE_TYPE_LABEL.graphic;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-[42px]">
       <section className="flex flex-col gap-3">
         <h3 className="text-[18px] leading-7 font-medium text-ink">선택한 소재 정보</h3>
 

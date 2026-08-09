@@ -191,7 +191,7 @@ export function Step1ImagePanel({ state, patch, onRequireMaterialName }: Props) 
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-[42px]">
       {/* 이미지 유형 */}
       <section className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
