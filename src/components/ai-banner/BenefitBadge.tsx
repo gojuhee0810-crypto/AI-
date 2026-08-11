@@ -19,11 +19,34 @@ import { BADGE_STYLES, type BadgeStyle } from '@/types/banner-flow';
  */
 export function splitBadgeText(text: string): { lines: string[]; emphasis: number } {
   const parts = text.trim().split(/\s+/).filter(Boolean);
-  if (parts.length <= 1) return { lines: parts, emphasis: 0 };
+  if (parts.length === 0) return { lines: [], emphasis: 0 };
 
-  const head = parts[0];
-  const tail = parts.slice(1).join(' ');
-  return { lines: [head, tail], emphasis: /\d/.test(head) ? 0 : 1 };
+  // 공백 없이 붙여 쓴 문구도 두 줄로 나눈다. "5%할인"을 한 줄로 두면 원 안에
+  // 다 넣으려고 글자가 작아져서, 정작 강조하려던 숫자가 안 보인다.
+  const lines = parts.length === 1 ? splitJoined(parts[0]) : [parts[0], parts.slice(1).join(' ')];
+  if (lines.length === 1) return { lines, emphasis: 0 };
+
+  return { lines, emphasis: /\d/.test(lines[0]) ? 0 : 1 };
+}
+
+/**
+ * 붙여 쓴 한 덩어리를 두 조각으로.
+ *
+ * 숫자 경계에서 끊는다 — 광고 문구는 "5%할인"이나 "최대50%"처럼 숫자와 말이
+ * 붙어 있는 꼴이 대부분이라, 그 사이가 사람이 읽을 때도 끊어 읽는 지점이다.
+ * 숫자가 없으면 가운데에서 자른다.
+ */
+function splitJoined(token: string): string[] {
+  if (token.length <= 3) return [token];
+
+  const leadingNumber = token.match(/^(\d[\d.,]*%?)(.+)$/);
+  if (leadingNumber) return [leadingNumber[1], leadingNumber[2]];
+
+  const trailingNumber = token.match(/^(.+?)(\d[\d.,]*%?)$/);
+  if (trailingNumber) return [trailingNumber[1], trailingNumber[2]];
+
+  const mid = Math.ceil(token.length / 2);
+  return [token.slice(0, mid), token.slice(mid)];
 }
 
 /** 글자 수에 따라 크기를 줄인다. 고정하면 "5%"는 헐렁하고 긴 문구는 원 밖으로 나간다. */

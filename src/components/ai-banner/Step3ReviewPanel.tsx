@@ -14,6 +14,7 @@
 
 import { useId, useState } from 'react';
 import { EditDialog } from '@/components/ai-banner/EditDialog';
+import { inputClass } from '@/components/ai-banner/fields';
 import { Radio } from '@/components/ai-banner/Radio';
 import {
   IMAGE_STYLE_LABEL,
@@ -34,6 +35,8 @@ import type { ImageStyleKey } from '@/types/image-generation';
 interface Props {
   state: AiBannerFlowState;
   patch: (next: Partial<AiBannerFlowState>) => void;
+  /** 등록을 시도했는데 못 넘어간 상태 — 빈 필수 칸을 붉게 표시한다. */
+  showErrors: boolean;
 }
 
 /** 입력 라벨 — 1·2단계와 같은 18/28 Medium */
@@ -144,7 +147,7 @@ function EditRow({
 
 type EditTarget = 'name' | 'copy' | 'image';
 
-export function Step3ReviewPanel({ state, patch }: Props) {
+export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
   const noticeId = useId();
   const landingId = useId();
   const reviewNoteId = useId();
@@ -217,10 +220,21 @@ export function Step3ReviewPanel({ state, patch }: Props) {
           ? draftStyle !== null
           : false;
 
-  // 뭔가 입력한 뒤에만 형식을 지적한다. 빈 칸을 처음부터 빨갛게 만들면
-  // 아직 하지도 않은 일을 잘못했다고 말하는 셈이다.
-  const showUrlError =
-    state.landingUrl.trim().length > 0 && !isValidLandingUrl(state.landingUrl);
+  /**
+   * 랜딩 URL 에러는 두 갈래다.
+   *
+   * 형식 오류는 입력한 뒤 바로 알린다 — 이미 뭔가 적었으니 지적할 근거가 있다.
+   * 비어 있는 건 등록을 눌렀을 때만 알린다. 들어오자마자 빨갛게 만들면 아직
+   * 하지도 않은 일을 잘못했다고 말하는 꼴이다.
+   */
+  const trimmedUrl = state.landingUrl.trim();
+  const urlError = !trimmedUrl
+    ? showErrors
+      ? '필수 입력 항목이에요.'
+      : null
+    : !isValidLandingUrl(state.landingUrl)
+      ? 'https:// 로 시작하는 주소를 입력해주세요'
+      : null;
 
   // 제품 이미지는 스타일이 없다 — 유형 이름으로 대신 부른다.
   const imageLabel =
@@ -300,25 +314,18 @@ export function Step3ReviewPanel({ state, patch }: Props) {
             inputMode="url"
             placeholder="https:// 형식의 랜딩 URL을 입력해주세요"
             value={state.landingUrl}
-            aria-invalid={showUrlError || undefined}
-            aria-describedby={showUrlError ? `${landingId}-error` : undefined}
+            aria-invalid={urlError !== null || undefined}
+            aria-describedby={urlError ? `${landingId}-error` : undefined}
             onChange={(e) => patch({ landingUrl: e.target.value })}
-            // 에러일 때 배경과 placeholder까지 붉게 — 테두리 1px만으로는 긴 화면에서
-            // 어느 칸이 문제인지 훑어봐서 안 보인다.
-            className={`h-12 ${INPUT_CLASS} ${
-              showUrlError
-                ? 'border-required bg-[#fff4f4] placeholder:text-required focus:border-required'
-                : ''
-            }`}
+            className={inputClass(urlError !== null, 'h-12')}
           />
-          {/* 입력을 시작한 뒤에만 알린다 — 빈 칸을 처음부터 빨갛게 만들지 않는다 */}
-          {showUrlError && (
+          {urlError && (
             <p
               id={`${landingId}-error`}
               role="alert"
               className="mt-1.5 px-4 text-[12px] leading-[19px] text-required"
             >
-              https:// 로 시작하는 주소를 입력해주세요
+              {urlError}
             </p>
           )}
         </div>

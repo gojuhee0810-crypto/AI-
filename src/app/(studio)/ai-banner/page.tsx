@@ -178,7 +178,7 @@ export default function AiBannerStudioPage() {
             {state.step === 2 && (
               <Step2CopyPanel state={state} patch={patch} showErrors={showErrors} />
             )}
-            {state.step === 3 && <Step3ReviewPanel state={state} patch={patch} />}
+            {state.step === 3 && <Step3ReviewPanel state={state} patch={patch} showErrors={showErrors} />}
           </div>
           <aside className="min-w-0 flex-1 border-l border-line bg-sidebar px-12 py-8">
             <div className="sticky top-[108px]">
