@@ -368,16 +368,31 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
 
                       {isBusy ? (
                         <Shimmer className="h-[132px] w-full rounded-lg" />
-                      ) : image ? (
+                      ) : (
                         <>
-                          <div className="flex h-[132px] w-full items-center justify-center overflow-hidden rounded-lg">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={image.imageUrl}
-                              alt={IMAGE_STYLE_LABEL[style]}
-                              className="max-h-full max-w-full object-contain transition-transform duration-200 group-hover:scale-105"
-                            />
-                          </div>
+                          {image ? (
+                            <div className="flex h-[132px] w-full items-center justify-center overflow-hidden rounded-lg">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={image.imageUrl}
+                                alt={IMAGE_STYLE_LABEL[style]}
+                                className="max-h-full max-w-full object-contain transition-transform duration-200 group-hover:scale-105"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex h-[132px] items-center justify-center rounded-lg bg-fill text-[13px] leading-[20px] text-ink-muted">
+                              생성되지 않았어요
+                            </div>
+                          )}
+
+                          {/* 실패한 카드에도 이 버튼이 있어야 한다. 예전엔 이미지가 있을
+                              때만 그려서, 한 장이 실패하면 그 카드에서는 손쓸 방법이 없고
+                              멀쩡한 다른 한 장까지 날리며 전체를 다시 돌려야 했다.
+
+                              옐로우로 바꾸지 않는다. 카드의 주 액션은 "고르기"인데
+                              카드에 마우스를 올릴 때마다 재생성 버튼이 켜지면 위계가
+                              뒤집히고, 하단 CTA와 함께 화면에 옐로우가 둘이 된다
+                              (디자인 시스템 §4 "옐로우는 화면에 하나만"). */}
                           <button
                             type="button"
                             disabled={isBusy}
@@ -385,17 +400,11 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
                               e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
                               handleRegenerate(style);
                             }}
-                            // 카드에 마우스를 올리면 이 버튼만 옐로우로 바뀐다 —
-                            // 카드 배경을 물들이지 않고 눌러야 할 곳만 알린다.
-                            className={`${CHIP_BASE} self-center border border-line bg-fill text-ink-muted group-hover:border-transparent group-hover:bg-brand group-hover:text-ink disabled:cursor-not-allowed`}
+                            className={`${CHIP_BASE} self-center border border-line bg-fill text-ink hover:bg-[#e5e9ec] disabled:cursor-not-allowed`}
                           >
                             다시 생성하기
                           </button>
                         </>
-                      ) : (
-                        <div className="flex h-[132px] items-center justify-center rounded-lg bg-fill text-[13px] leading-[20px] text-ink-muted">
-                          생성되지 않았어요
-                        </div>
                       )}
                     </label>
                   );
