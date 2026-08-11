@@ -253,19 +253,19 @@ export function Step3ReviewPanel({ state, patch }: Props) {
             </span>
           </EditRow>
 
+          {/* 썸네일만 보여준다. "3D 아이콘" 같은 스타일 이름을 옆에 적어봐야
+              그림이 이미 그걸 말하고 있어, 같은 정보를 두 번 읽게 할 뿐이다.
+              (스타일 이름이 필요한 자리는 고르는 화면인 1단계다) */}
           <EditRow label="이미지" onClick={() => openEdit('image')}>
-            <span className="flex items-center gap-3">
-              <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg">
-                {bannerImageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={bannerImageUrl}
-                    alt=""
-                    className="max-h-full max-w-full object-contain"
-                  />
-                )}
-              </span>
-              <span className="text-[16px] leading-[26px] text-ink">{imageLabel}</span>
+            <span className="flex size-12 items-center justify-center overflow-hidden rounded-lg">
+              {bannerImageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={bannerImageUrl}
+                  alt={imageLabel}
+                  className="max-h-full max-w-full object-contain"
+                />
+              )}
             </span>
           </EditRow>
         </div>
@@ -410,7 +410,7 @@ export function Step3ReviewPanel({ state, patch }: Props) {
                         e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
                         setCopyEditIndex(isEditing ? null : index);
                       }}
-                      className="ml-auto text-[13px] leading-[20px] font-medium text-ink-muted underline underline-offset-2 transition-colors duration-150 hover:text-ink"
+                      className="ml-auto text-[13px] leading-[20px] font-medium text-fill-strong underline underline-offset-2 transition-colors duration-150 hover:text-ink"
                     >
                       {isEditing ? '완료' : '직접 수정'}
                     </button>

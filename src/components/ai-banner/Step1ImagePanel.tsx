@@ -380,7 +380,7 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
                               />
                             </div>
                           ) : (
-                            <div className="flex h-[132px] items-center justify-center rounded-lg bg-fill text-[13px] leading-[20px] text-ink-muted">
+                            <div className="flex h-[132px] items-center justify-center rounded-lg bg-fill text-[13px] leading-[20px] text-fill-strong">
                               생성되지 않았어요
                             </div>
                           )}
@@ -560,7 +560,7 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
                         className="size-4 shrink-0 rounded-full"
                         style={{ backgroundColor: BADGE_STYLES[key].fill }}
                       />
-                      <span className="text-[13px] leading-[20px] text-ink-muted">
+                      <span className="text-[13px] leading-[20px] text-fill-strong">
                         {BADGE_STYLES[key].label}
                       </span>
                     </button>
