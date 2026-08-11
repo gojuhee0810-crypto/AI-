@@ -12,6 +12,7 @@ import { useId, useState } from 'react';
 import {
   MAINTITLE_LIMIT,
   SUBTITLE_LIMIT,
+  resolveBrandButtons,
   resolveObjectTag,
   type AiBannerFlowState,
 } from '@/types/banner-flow';
@@ -65,8 +66,8 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
 
   const hasInput = state.benefit.trim().length > 0;
   const hasResult = state.copyRecommendations.length > 0;
-  // Step1과 같은 규칙: 지금 눌러야 진행되는 버튼만 옐로우, 그 외엔 아웃라인(보조).
-  const isPrimaryAction = hasInput && !state.isGeneratingCopy && !hasResult;
+  // 옐로우 판단은 resolveBrandButtons 하나가 한다(Step1·하단 CTA와 같은 근거).
+  const isPrimaryAction = resolveBrandButtons(state).includes('generate-copy');
 
   async function handleGenerate() {
     if (!hasInput) return;

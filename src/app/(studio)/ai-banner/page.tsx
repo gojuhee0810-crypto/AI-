@@ -17,6 +17,7 @@ import {
   INITIAL_FLOW_STATE,
   MATERIAL_NAME_LIMIT,
   isStepComplete,
+  resolveBrandButtons,
   type AiBannerFlowState,
 } from '@/types/banner-flow';
 
@@ -64,6 +65,9 @@ export default function AiBannerStudioPage() {
   }
 
   const canGoNext = isStepComplete(state, state.step);
+  // 옐로우 여부는 resolveBrandButtons 하나가 정한다 — 여기서 따로 판단하면
+  // 생성 버튼과 나란히 두 개가 노래진다(실제로 그랬다).
+  const isCtaPrimary = resolveBrandButtons(state).includes('submit');
   const hasNameError = showErrors && !state.materialName.trim();
 
   /**
@@ -199,7 +203,11 @@ export default function AiBannerStudioPage() {
           <button
             type="button"
             onClick={handleNext}
-            className="h-12 min-w-[222px] rounded-[24px] bg-brand px-6 text-[16px] leading-[26px] font-medium text-ink transition-[background-color,scale] duration-150 hover:bg-[#f2df00] active:scale-[0.96]"
+            className={`h-12 min-w-[222px] rounded-[24px] px-6 text-[16px] leading-[26px] font-medium transition-[background-color,scale] duration-150 active:scale-[0.96] ${
+              isCtaPrimary
+                ? 'bg-brand text-ink hover:bg-[#f2df00]'
+                : 'bg-fill text-ink-muted hover:bg-[#e5e9ec]'
+            }`}
           >
             {NEXT_LABEL[state.step]}
           </button>

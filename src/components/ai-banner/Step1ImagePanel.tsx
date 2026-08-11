@@ -16,6 +16,7 @@ import {
   BADGE_TEXT_LIMIT,
   IMAGE_STYLE_LABEL,
   IMAGE_TYPE_LABEL,
+  resolveBrandButtons,
   type AiBannerFlowState,
   type BadgeStyle,
   type ImageSourceType,
@@ -124,9 +125,9 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
   const isProduct = state.imageType === 'product';
   const hasInput = state.primaryObject.trim().length > 0;
   const hasResult = state.images.length > 0;
-  // 지금 눌러야 진행되는 버튼만 브랜드 컬러. 결과가 나오면 주요 액션이
-  // 하단 "카피 문구 생성하러가기"로 넘어가므로 회색으로 내린다.
-  const isPrimaryAction = isGraphic && hasInput && !state.isGeneratingImages && !hasResult;
+  // 옐로우 판단은 resolveBrandButtons 하나가 한다 — 화면마다 따로 쓰면
+  // 하단 CTA와 동시에 노래지는 상태가 생긴다(실제로 그랬다).
+  const isPrimaryAction = resolveBrandButtons(state).includes('generate-image');
 
   /**
    * 규격을 통과한 파일만 data URL로 바꿔 넘긴다.

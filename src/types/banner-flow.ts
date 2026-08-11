@@ -156,6 +156,46 @@ export function isStepComplete(state: AiBannerFlowState, step: 1 | 2 | 3): boole
   return isValidLandingUrl(state.landingUrl);
 }
 
+/** 브랜드 옐로우로 칠할 수 있는 버튼들. */
+export type BrandButton = 'generate-image' | 'generate-copy' | 'submit';
+
+/**
+ * 지금 옐로우로 칠할 버튼 — **화면에 하나만 나와야 한다**(디자인 시스템 §4).
+ *
+ * 이 판단을 화면마다 따로 쓰다가 두 번 깨졌다. 하단 CTA의 비활성 스타일을 지우면서
+ * 항상 옐로우가 되어, 생성 버튼과 나란히 두 개가 떴다. 규칙이 문서와 주석에만
+ * 있으면 고치는 사람이 기억해야만 지켜진다.
+ *
+ * 여기 모아두면 "동시에 둘 이상이 되는 상태가 있는가"를 테스트가 대신 확인한다.
+ */
+export function resolveBrandButtons(state: AiBannerFlowState): BrandButton[] {
+  // 지금 단계를 끝냈으면 다음으로 넘어가는 게 할 일이다.
+  if (isStepComplete(state, state.step)) return ['submit'];
+
+  // 아직 못 끝냈다면, 그 단계를 끝내는 생성 버튼이 할 일이다.
+  if (
+    state.step === 1 &&
+    state.imageType === 'graphic' &&
+    state.primaryObject.trim().length > 0 &&
+    !state.isGeneratingImages &&
+    state.images.length === 0
+  ) {
+    return ['generate-image'];
+  }
+
+  if (
+    state.step === 2 &&
+    state.benefit.trim().length > 0 &&
+    !state.isGeneratingCopy &&
+    state.copyRecommendations.length === 0
+  ) {
+    return ['generate-copy'];
+  }
+
+  // 아무것도 누를 준비가 안 됐다 — 옐로우 없음.
+  return [];
+}
+
 /** 미리보기·최종 확인에 쓸 배너 이미지. 유형에 따라 출처가 다르다. */
 export function resolveBannerImageUrl(state: AiBannerFlowState): string | null {
   if (state.imageType === 'product') return state.productImageUrl;
