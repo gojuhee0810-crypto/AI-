@@ -12,6 +12,37 @@ export const POPUP_SHELL =
 /** 기본 카드 폭(px) */
 export const POPUP_WIDTH = 420;
 
+/**
+ * 팝업은 **본문과 버튼 영역이 따로**다 (Figma 12:115608 실측).
+ *
+ *   ┌─ 420 ───────────────┐
+ *   │ pt 32 · px 32       │
+ *   │   타이틀             │
+ *   │   ↓ 24              │  ← 타이틀과 본문 사이만 24
+ *   │   본문               │
+ *   │ pb 40               │
+ *   ├─────────────────────┤
+ *   │ 버튼 48 (top에 붙음) │  ← 여기부터 footer, 높이 80 고정
+ *   │ ↓ 32                │
+ *   └─────────────────────┘
+ *
+ * 예전엔 버튼을 본문과 한 흐름에 두고 gap 24로 띄웠다. 그러면 본문→버튼이 24,
+ * 버튼→바닥이 40이 되어 실측(40 / 32)과 위아래가 뒤집힌다.
+ */
+export const POPUP_BODY = 'flex flex-col items-center gap-6 px-8 pt-8 pb-10';
+
+/** 버튼 영역 — 높이 80 고정. 버튼은 위에 붙고 아래 32가 남는다. */
+export const POPUP_FOOTER = 'relative flex h-20 justify-center';
+
+/**
+ * 버튼 영역 위에 얹히는 34px 페이드.
+ *
+ * 본문이 길어 스크롤될 때 글이 버튼 밑에서 잘리는 대신 흐려지며 사라진다.
+ * 스크롤이 없어도 원본에는 항상 있다 — 버튼 영역이 본문과 다른 층이라는 표시다.
+ */
+export const POPUP_FADE =
+  'pointer-events-none absolute inset-x-0 -top-[34px] h-[34px] bg-gradient-to-b from-transparent to-surface';
+
 const BUTTON_BASE =
   'h-12 w-[144px] shrink-0 rounded-[24px] text-[16px] leading-[26px] font-medium tracking-[-0.2px] transition-[background-color,scale] duration-150 active:scale-[0.96]';
 
