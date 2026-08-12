@@ -6,6 +6,7 @@ import {
   isValidLandingUrl,
   resolveBannerImageUrl,
   resolveBrandButtons,
+  resolveButtonTone,
   resolveObjectTag,
   type AiBannerFlowState,
 } from '@/types/banner-flow';
@@ -216,7 +217,7 @@ test('단계를 끝내면 하단 CTA가, 아니면 생성 버튼이 옐로우다
     ['submit'],
   );
 
-  // 생성 중에는 아무것도 옐로우가 아니다 — 지금 누를 게 없다
+  // 생성 중에는 생성 버튼이 옐로우다 — 지금 벌어지는 일이 화면의 주인공이다
   assert.deepEqual(
     resolveBrandButtons(
       build({
@@ -227,6 +228,94 @@ test('단계를 끝내면 하단 CTA가, 아니면 생성 버튼이 옐로우다
         isGeneratingImages: true,
       }),
     ),
-    [],
+    ['generate-image'],
+  );
+});
+
+// ── AI 생성 버튼의 4단계 (2026-08-11 사용자 버튼 가이드) ────────────
+//
+// 색 세 가지의 뜻이 겹치면 안 된다:
+//   brand #FFEB00 지금 할 일 · support #EFF2F4 누를 순 있음 · disabled #FFF9AD 못 누름
+//
+// 실제로 "누를 수 있는 다시 생성하기"에 옅은 노랑을 썼다가 못 누르는 버튼과
+// 같은 색이 됐다. 표를 그대로 테스트로 옮겨 둔다.
+
+test('AI 이미지 생성 버튼은 입력 전·후·생성 중·완료 후로 색이 바뀐다', () => {
+  const base = { step: 1 as const, materialName: '소재', imageType: 'graphic' as const };
+
+  // ① 입력 전 — 못 누름
+  assert.equal(resolveButtonTone(build(base), 'generate-image'), 'disabled');
+
+  // ② 입력 후 — 지금 할 일
+  assert.equal(
+    resolveButtonTone(build({ ...base, primaryObject: '쿠폰' }), 'generate-image'),
+    'brand',
+  );
+
+  // ③ 생성 중 — 여전히 옐로우(+ 로딩)
+  assert.equal(
+    resolveButtonTone(
+      build({ ...base, primaryObject: '쿠폰', isGeneratingImages: true }),
+      'generate-image',
+    ),
+    'brand',
+  );
+
+  // ④ 완료 후 — 누를 수 있지만 주인공은 하단 CTA로 넘어갔다
+  assert.equal(
+    resolveButtonTone(
+      build({ ...base, primaryObject: '쿠폰', images: [img('style-1-3d-basic', 'a')] }),
+      'generate-image',
+    ),
+    'support',
+  );
+});
+
+test('AI 카피 버튼도 같은 4단계를 따른다', () => {
+  const base = { step: 2 as const };
+
+  assert.equal(resolveButtonTone(build(base), 'generate-copy'), 'disabled');
+  assert.equal(resolveButtonTone(build({ ...base, benefit: '10% 할인' }), 'generate-copy'), 'brand');
+  assert.equal(
+    resolveButtonTone(build({ ...base, benefit: '10% 할인', isGeneratingCopy: true }), 'generate-copy'),
+    'brand',
+  );
+  assert.equal(
+    resolveButtonTone(
+      build({ ...base, benefit: '10% 할인', copyRecommendations: [copy] }),
+      'generate-copy',
+    ),
+    'support',
+  );
+});
+
+test('생성이 도는 동안에는 하단 CTA로 넘어갈 수 없다', () => {
+  // 안 그러면 생성 버튼과 CTA가 동시에 옐로우가 된다.
+  const state = build({
+    step: 1,
+    materialName: '소재',
+    imageType: 'graphic',
+    primaryObject: '쿠폰',
+    images: [img('style-1-3d-basic', 'a')],
+    selectedImageStyle: 'style-1-3d-basic',
+    isGeneratingImages: true,
+  });
+  assert.equal(isStepComplete(state, 1), true, '조건 자체는 차 있다');
+  assert.equal(resolveButtonTone(state, 'submit'), 'disabled');
+});
+
+test('옅은 노랑은 못 누르는 버튼만 쓴다 — 누를 수 있으면 회색이다', () => {
+  // 이 규칙이 깨지면 "다시 생성하기"가 비활성 버튼과 같은 색이 된다.
+  const done = build({
+    step: 1,
+    materialName: '소재',
+    imageType: 'graphic',
+    primaryObject: '쿠폰',
+    images: [img('style-1-3d-basic', 'a')],
+  });
+  assert.notEqual(
+    resolveButtonTone(done, 'generate-image'),
+    'disabled',
+    '결과가 있으면 다시 만들 수 있으므로 disabled가 아니다',
   );
 });

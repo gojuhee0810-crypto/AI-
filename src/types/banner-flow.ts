@@ -156,44 +156,74 @@ export function isStepComplete(state: AiBannerFlowState, step: 1 | 2 | 3): boole
   return isValidLandingUrl(state.landingUrl);
 }
 
-/** 브랜드 옐로우로 칠할 수 있는 버튼들. */
+/** 색을 판단해야 하는 버튼들. */
 export type BrandButton = 'generate-image' | 'generate-copy' | 'submit';
 
 /**
- * 지금 옐로우로 칠할 버튼 — **화면에 하나만 나와야 한다**(디자인 시스템 §4).
+ * 버튼 색은 셋뿐이고, 셋의 뜻이 겹치지 않는다 (2026-08-11 사용자 버튼 가이드).
  *
- * 이 판단을 화면마다 따로 쓰다가 두 번 깨졌다. 하단 CTA의 비활성 스타일을 지우면서
- * 항상 옐로우가 되어, 생성 버튼과 나란히 두 개가 떴다. 규칙이 문서와 주석에만
- * 있으면 고치는 사람이 기억해야만 지켜진다.
+ *   brand     #FFEB00 · 라벨 100%   지금 눌러야 진행된다. **화면에 하나만.**
+ *   support   #EFF2F4 · 라벨 100%   누를 수 있지만 주인공은 아니다.
+ *   disabled  #FFF9AD · 라벨  32%   정말 못 누른다.
  *
- * 여기 모아두면 "동시에 둘 이상이 되는 상태가 있는가"를 테스트가 대신 확인한다.
+ * 셋을 섞으면 뜻이 사라진다. 실제로 "누를 수 있는 다시 생성하기"에 옅은 노랑을
+ * 썼다가 못 누르는 버튼과 같은 색이 됐다.
  */
+export type ButtonTone = 'brand' | 'support' | 'disabled';
+
+/**
+ * AI 생성 버튼의 4단계 — 사용자가 준 표 그대로다.
+ *
+ *   ① 입력 전   disabled   못 누름
+ *   ② 입력 후   brand      지금 할 일
+ *   ③ 생성 중   brand      + 로딩 표시
+ *   ④ 완료 후   support    누를 수 있지만 주인공 아님
+ */
+function generateTone(hasInput: boolean, isGenerating: boolean, isDone: boolean): ButtonTone {
+  if (isGenerating) return 'brand'; // ③ — 진행 중인 일이 화면의 주인공이다
+  if (isDone) return 'support'; // ④ — 주인공은 하단 CTA로 넘어갔다
+  if (hasInput) return 'brand'; // ②
+  return 'disabled'; // ①
+}
+
+/**
+ * 버튼 하나의 색. 화면은 이 함수만 부르고 스스로 판단하지 않는다.
+ *
+ * 이 판단을 화면마다 따로 쓰다가 세 번 깨졌다. 규칙이 문서와 주석에만 있으면
+ * 고치는 사람이 기억해야만 지켜진다. 여기 모아두면 "옐로우가 동시에 둘이 되는
+ * 상태가 있는가"를 테스트가 대신 확인한다.
+ */
+export function resolveButtonTone(state: AiBannerFlowState, button: BrandButton): ButtonTone {
+  if (button === 'generate-image') {
+    // 제품 업로드 경로에는 이 버튼이 없다.
+    if (state.step !== 1 || state.imageType !== 'graphic') return 'disabled';
+    return generateTone(
+      state.primaryObject.trim().length > 0,
+      state.isGeneratingImages,
+      // 단계가 끝났는데도 여기가 옐로우면 하단 CTA와 둘이 된다. 결과가 아직
+      // 없더라도(복원된 상태 등) 단계가 찼으면 주인공은 넘어간 것으로 본다.
+      state.images.length > 0 || isStepComplete(state, 1),
+    );
+  }
+
+  if (button === 'generate-copy') {
+    if (state.step !== 2) return 'disabled';
+    return generateTone(
+      state.benefit.trim().length > 0,
+      state.isGeneratingCopy,
+      state.copyRecommendations.length > 0 || isStepComplete(state, 2),
+    );
+  }
+
+  // 하단 CTA. 생성이 도는 동안은 넘어갈 수 없다 — 그 사이 옐로우는 생성 버튼 몫이다.
+  if (state.isGeneratingImages || state.isGeneratingCopy) return 'disabled';
+  return isStepComplete(state, state.step) ? 'brand' : 'disabled';
+}
+
+/** 지금 옐로우인 버튼들 — 언제나 0개 또는 1개여야 한다(디자인 시스템 §4). */
 export function resolveBrandButtons(state: AiBannerFlowState): BrandButton[] {
-  // 지금 단계를 끝냈으면 다음으로 넘어가는 게 할 일이다.
-  if (isStepComplete(state, state.step)) return ['submit'];
-
-  // 아직 못 끝냈다면, 그 단계를 끝내는 생성 버튼이 할 일이다.
-  if (
-    state.step === 1 &&
-    state.imageType === 'graphic' &&
-    state.primaryObject.trim().length > 0 &&
-    !state.isGeneratingImages &&
-    state.images.length === 0
-  ) {
-    return ['generate-image'];
-  }
-
-  if (
-    state.step === 2 &&
-    state.benefit.trim().length > 0 &&
-    !state.isGeneratingCopy &&
-    state.copyRecommendations.length === 0
-  ) {
-    return ['generate-copy'];
-  }
-
-  // 아무것도 누를 준비가 안 됐다 — 옐로우 없음.
-  return [];
+  const buttons: BrandButton[] = ['generate-image', 'generate-copy', 'submit'];
+  return buttons.filter((b) => resolveButtonTone(state, b) === 'brand');
 }
 
 /** 미리보기·최종 확인에 쓸 배너 이미지. 유형에 따라 출처가 다르다. */
