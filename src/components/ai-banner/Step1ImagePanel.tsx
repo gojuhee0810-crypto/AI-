@@ -24,9 +24,8 @@ import {
 import { AlertDialog } from '@/components/ai-banner/AlertDialog';
 import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
 import { CharCounter } from '@/components/ai-banner/CharCounter';
-import { FormField, FormOptions, fieldProps } from '@/components/ai-banner/FormField';
 import { aiGenerateButtonClass } from '@/components/ai-banner/buttons';
-import { FORM_FIELD, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
+import { FORM_FIELD, FORM_LABEL, FORM_OPTIONS, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { Radio } from '@/components/ai-banner/Radio';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
@@ -57,9 +56,6 @@ interface Props {
 // 여기엔 화면에 놓는 순서만 남긴다.
 const IMAGE_TYPE_ORDER: ImageSourceType[] = ['graphic', 'product'];
 const STYLE_ORDER: ImageStyleKey[] = ['style-1-3d-basic', 'style-2-2d-flat'];
-
-/** 오브젝트 명칭 글자수. 화면과 검사가 같은 값을 봐야 한다. */
-const OBJECT_LIMIT = 15;
 
 const ACCENT_OPTIONS = [
   { value: 'logo', label: '로고', info: '브랜드 로고를 배너 우측에 함께 노출해요' },
@@ -109,6 +105,14 @@ function SpecList({ items }: { items: string[] }) {
   );
 }
 
+function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
+  return (
+    <label htmlFor={htmlFor} className={FORM_LABEL}>
+      {children} <span className="text-error">*</span>
+    </label>
+  );
+}
+
 export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialName }: Props) {
   const objectId = useId();
   const badgeTextId = useId();
@@ -123,8 +127,6 @@ export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialNam
   const isGraphic = state.imageType === 'graphic';
   const isProduct = state.imageType === 'product';
   const hasInput = state.primaryObject.trim().length > 0;
-  // 색만으로 에러를 알리지 않는다 — 원본의 예외 없는 규칙이다.
-  const objectError = showErrors && !hasInput ? '필수 입력 항목이에요.' : null;
   const hasResult = state.images.length > 0;
   // 색 판단은 resolveButtonTone 하나가 한다 — 화면마다 따로 쓰면 반드시 어긋난다.
   const generateTone = resolveButtonTone(state, 'generate-image');
@@ -232,15 +234,12 @@ export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialNam
   return (
     <div className={FORM_STACK}>
       {/* 이미지 유형 */}
-      <FormField
-        as="group"
-        label="이미지 유형"
-        required
-        adornment={
+      <section className={FORM_FIELD}>
+        <div className="flex items-center gap-2">
+          <FieldLabel>이미지 유형</FieldLabel>
           <InfoTooltip text="아이콘은 AI가 자동생성하고 제품 이미지는 업로드 해주세요" />
-        }
-      >
-        <FormOptions>
+        </div>
+        <div className={FORM_OPTIONS}>
           {IMAGE_TYPE_ORDER.map((value) => (
             // 선택 표시는 라디오 하나로만 한다. 테두리 색까지 같이 바뀌면 인풋 포커스와
             // 뒤섞여 오히려 무엇이 선택된 건지 흐려진다. 호버는 연한 회색 배경만.
@@ -262,30 +261,26 @@ export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialNam
               </span>
             </label>
           ))}
-        </FormOptions>
-      </FormField>
+        </div>
+      </section>
 
       {/* 그래픽 아이콘 — 오브젝트 입력 + AI 생성 */}
       {isGraphic && (
         <>
           <section className={FORM_FIELD}>
-            <FormField
-              label="오브젝트 명칭"
-              htmlFor={objectId}
-              required
-              error={objectError}
-              counter={{ value: state.primaryObject, limit: OBJECT_LIMIT }}
-            >
+            <FieldLabel htmlFor={objectId}>오브젝트 명칭</FieldLabel>
+            <div>
               <input
-                {...fieldProps(objectId, true, objectError)}
+                id={objectId}
                 type="text"
-                maxLength={OBJECT_LIMIT}
+                maxLength={15}
                 placeholder="생성하고 싶은 오브젝트를 입력해주세요"
                 value={state.primaryObject}
                 onChange={(e) => patch({ primaryObject: e.target.value })}
                 className={inputClass(showErrors && !hasInput, 'h-12')}
               />
-            </FormField>
+              <CharCounter value={state.primaryObject} limit={15} />
+            </div>
 
             {/* 다시 만드는 자리는 여기 하나다. 예전엔 카드마다 "다시 생성하기"가
                 따로 있었는데, 카드의 주 액션인 "고르기"와 뒤섞여 무엇을 누르는
@@ -401,7 +396,8 @@ export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialNam
 
       {/* 제품 이미지 — 직접 업로드 */}
       {isProduct && (
-        <FormField as="group" label="제품 이미지 업로드" required>
+        <section className={FORM_FIELD}>
+          <FieldLabel>제품 이미지 업로드</FieldLabel>
           <input
             ref={fileInputRef}
             type="file"
@@ -450,16 +446,19 @@ export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialNam
               </>
             )}
           </button>
-        </FormField>
+
+        </section>
       )}
 
-      {/* 배너 강조 요소 추가 — 설명은 라벨에 붙는다(해부도상 자리).
-          예전엔 라벨과 컨트롤 사이에 불릿 문단으로 끼워 넣었다. */}
-      <FormField
-        as="group"
-        label="배너 강조 요소 추가"
-        description="배너 크기 제약으로 로고와 혜택 배지 중 하나만 사용할 수 있어요"
-      >
+      {/* 배너 강조 요소 추가 */}
+      <section className={FORM_FIELD}>
+        <h3 className="text-[18px] leading-7 font-medium text-ink">배너 강조 요소 추가</h3>
+        <p className="flex items-start gap-2 text-[14px] leading-[22px] text-ink-muted">
+          <span aria-hidden className="pt-2 text-[6px] leading-none">
+            ●
+          </span>
+          배너 크기 제약으로 로고와 혜택 배지 중 하나만 사용할 수 있어요
+        </p>
         <div className="flex items-center gap-[30px]">
           {ACCENT_OPTIONS.map((opt) => (
             <div key={opt.value} className="flex items-center gap-1">
@@ -579,7 +578,7 @@ export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialNam
             </p>
           </div>
         )}
-      </FormField>
+      </section>
 
       {/* 업로드 실패 알림 — 제품 이미지와 로고가 같은 모달을 쓴다 */}
       <AlertDialog
