@@ -1,0 +1,45 @@
+# 게이트를 사람이 기억하지 않게 한다.
+#
+# lint · test · build는 이미 있었지만 **누가 돌려야** 돌았다. 이 프로젝트가 계속
+# 지적해온 실패 유형이 정확히 그거다 — 규칙이 기억에만 있으면 지켜지지 않는다.
+#
+# 디자인 시스템은 별도 저장소를 심볼릭 링크로 걸어둔 것이라 여기엔 없다.
+# 그걸 읽는 테스트 2개는 알아서 건너뛴다(design-tokens.test.ts의 hasOrigin).
+# 나머지 79개는 그대로 돈다.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# 같은 브랜치에 연달아 푸시하면 앞의 실행을 취소한다 — 어차피 뒤엣것만 본다.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # 테스트가 tsx --test로 Node 네이티브 러너를 쓴다. 로컬이 24다.
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # 셋을 따로 두는 건 어디서 깨졌는지 로그를 열지 않고 알기 위해서다.
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      # API 키 없이 빌드된다(확인함). 라우트는 빌드 시점에 실행되지 않는다.
+      - name: Build
+        run: npm run build
