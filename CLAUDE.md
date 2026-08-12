@@ -47,6 +47,7 @@ AI 배너 스튜디오는 이러한 제작 과정을 이미지 생성부터 카�
 | **디자인 시스템 (컴포넌트 28종·토큰·접근성)** | **`.claude/skills/adcenter-design-system/`** |
 | 화면 흐름·필드 정의·에러 표현 결정 | `docs/guides/admin-design-system.md` |
 | UI 폴리시 기준 | `docs/guides/ui-polish-checklist.md` |
+| **작업 방식 (하네스·루프)** | `docs/guides/harness-and-loop.md` |
 
 **디자인 시스템은 `.claude/skills/adcenter-design-system/`이 유일한 기준이다.**
 별도 저장소를 심볼릭 링크로 걸어둔 것이고, 원본 광고센터 화면 실측 + Figma 변수
