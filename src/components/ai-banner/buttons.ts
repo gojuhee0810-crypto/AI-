@@ -31,31 +31,27 @@ export function aiGenerateButtonClass(tone: ButtonTone): string {
  * "다시 생성하기"처럼 누를 수 있는 버튼에 옅은 노랑을 쓰면 못 누르는 버튼과
  * 같은 색이 되어 구분이 사라진다. 실제로 그렇게 만들었다가 되돌렸다.
  */
+/**
+ * disabled 톤의 라벨이 조건부인 이유:
+ *
+ * 옅은 노랑 위 32% 검정은 대비가 **2.14**다. WCAG 1.4.3이 이걸 봐주는 건 정말로
+ * 조작할 수 없는 요소일 때뿐인데, 우리 하단 CTA는 눌러서 "무엇이 비었는지"를
+ * 알려주는 게 설계다(에러 표현 §3). 조작 가능한 버튼이라 면제 대상이 아니다.
+ *
+ * 그래서 32%는 `disabled:` 접두사에 둔다 — HTML disabled가 실제로 걸린 버튼(AI
+ * 생성)에만 적용되고, 눌리는 버튼(하단 CTA)은 100%로 남는다. 정의는 하나인데
+ * 두 경우가 각자 맞게 된다.
+ */
 export const TONE_CLASS: Record<ButtonTone, string> = {
   brand: 'bg-brand text-ink enabled:hover:bg-[#f2df00]',
   support: 'bg-fill text-ink enabled:hover:bg-[#e5e9ec]',
-  disabled: 'bg-brand-disabled text-ink/32',
+  disabled: 'bg-brand-disabled text-ink disabled:text-ink/32',
 };
 
-/**
- * 카드 안 인라인 액션 버튼(Chip) — "수정", "이미지 변경", "다시 생성하기".
- *
- * 폭은 라벨에 맡기고 좌우 10px 여백으로 잡는다. 고정 폭으로 묶으면 "수정" 두 글자가
- * 가운데만 차고 양옆이 비어 어디를 눌러야 하는지 흐려진다.
- */
-export const CHIP_BASE =
-  'flex h-8 shrink-0 items-center justify-center gap-1 rounded-[24px] px-2.5 text-[13px] leading-[20px] font-medium transition-[background-color,border-color,color,scale] duration-150 active:scale-[0.96]';
-
-/**
- * 흰 배경 + 회색 테두리 (기본)
- *
- * 글자색 --color-fill-strong은 대비 5.51이라 13px에서도 AA를 넘는다.
- *
- * 2026-08-11: --color-ink-muted도 grey600(5.51)이 되어 이제 값이 같다. 그래도
- * 이름은 그대로 둔다 — 원본에서 ico&text/sub와 background/reverse가 같은 원시값을
- * 가리키면서 쓰임이 다른 것과 같다.
- */
-export const CHIP_OUTLINE = `${CHIP_BASE} border border-line bg-surface text-fill-strong hover:bg-fill hover:text-ink`;
+// Chip(CHIP_BASE·CHIP_OUTLINE)은 지웠다. 원본 Button은 md 36 / lg 48 두 크기뿐이라
+// h-8·13px은 근거가 없었고, 문서가 "13/20은 Chip 전용"으로 허용해둔 예외가 오히려
+// 스케일 이탈의 우회로가 됐다 — 2026-08-11 감사에서 13px 쓰임 4곳 중 칩은 0곳이고
+// CHIP_* 는 한 번도 불리지 않았다. 인라인 액션이 필요하면 TEXT_BUTTON을 쓴다.
 
 /**
  * 배경 없는 텍스트 버튼 — 원본 Button Text.

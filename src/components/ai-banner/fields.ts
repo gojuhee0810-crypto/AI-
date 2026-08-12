@@ -58,9 +58,6 @@ export const FORM_STACK = 'flex flex-col gap-[50px]';
 /** 라벨(+설명) → 컨트롤 — space/15 */
 export const FORM_FIELD = 'flex flex-col gap-[15px]';
 
-/** 라벨과 설명 사이는 간격 0 — 행간으로만 벌어진다 */
-export const FORM_LABEL_GROUP = 'flex flex-col';
-
 /** 형제 선택지끼리 — space/12 */
 export const FORM_OPTIONS = 'flex flex-col gap-3';
 
