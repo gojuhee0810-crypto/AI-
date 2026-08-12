@@ -230,34 +230,31 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                 </div>
 
                 {isEditing ? (
-                  <div
-                    className="flex flex-col gap-3"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[14px] leading-[22px] text-ink-muted">서브타이틀</span>
-                      <input
-                        type="text"
-                        value={rec.subtitle}
-                        onChange={(e) => updateRecommendation(index, 'subtitle', e.target.value)}
-                        className="h-12 w-full rounded-lg border border-line px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none focus:border-ink"
-                      />
-                      <span className="px-4 text-right">
-                        <CharCounter value={rec.subtitle} limit={SUBTITLE_LIMIT} />
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[14px] leading-[22px] text-ink-muted">메인타이틀</span>
-                      <input
-                        type="text"
-                        value={rec.maintitle}
-                        onChange={(e) => updateRecommendation(index, 'maintitle', e.target.value)}
-                        className="h-12 w-full rounded-lg border border-line px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none focus:border-ink"
-                      />
-                      <span className="px-4 text-right">
-                        <CharCounter value={rec.maintitle} limit={MAINTITLE_LIMIT} />
-                      </span>
-                    </div>
+                  // 두 칸은 하나를 고치면 다른 하나도 보게 되는 짝이라 space/25로 묶는다
+                  // (원본이 "밀접하게 묶인 폼 항목끼리"에 쓰는 값).
+                  <div className="flex flex-col gap-[25px]" onClick={(e) => e.preventDefault()}>
+                    {(
+                      [
+                        ['서브타이틀', 'subtitle', SUBTITLE_LIMIT],
+                        ['메인타이틀', 'maintitle', MAINTITLE_LIMIT],
+                      ] as const
+                    ).map(([label, field, limit]) => (
+                      // 폼 항목 해부도 그대로: 라벨 → space/15 → 컨트롤 → space/6 → 카운터.
+                      // 예전엔 gap-1(4)로 셋을 한꺼번에 띄우고, 카운터를 px-4 span으로 한 번 더
+                      // 감싸서 CharCounter의 px-4와 겹쳤다. 간격이 어디서 오는지 알 수 없었다.
+                      <div key={field} className={FORM_FIELD}>
+                        <span className="text-[14px] leading-[22px] text-ink-muted">{label}</span>
+                        <div>
+                          <input
+                            type="text"
+                            value={rec[field]}
+                            onChange={(e) => updateRecommendation(index, field, e.target.value)}
+                            className={inputClass(false, 'h-12')}
+                          />
+                          <CharCounter value={rec[field]} limit={limit} />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   // 면은 실물 카피가 가진다. 예전엔 근거가 면을 갖고 카피가 맨몸으로

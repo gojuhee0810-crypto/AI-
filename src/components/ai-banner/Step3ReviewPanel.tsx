@@ -15,6 +15,7 @@
 import { useId, useState } from 'react';
 import { IconPenHorizlineLine } from '@karrotmarket/react-monochrome-icon';
 import { EditDialog } from '@/components/ai-banner/EditDialog';
+import { TEXT_BUTTON } from '@/components/ai-banner/buttons';
 import { FORM_FIELD, FORM_HELPER, FORM_LABEL, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
 import { CharCount, CharCounter } from '@/components/ai-banner/CharCounter';
 import { Radio } from '@/components/ai-banner/Radio';
@@ -386,7 +387,10 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
                     className="sr-only"
                   />
                   <Radio checked={isSelected} />
-                  <span className="text-[14px] leading-[22px] font-medium text-accent">
+                  {/* 파랑이 아니라 검정 볼드다 — 흰 배경 위 파란 글씨는 링크라서,
+                      누를 수 없는 패턴명에 쓰면 누르라는 신호를 붙이게 된다.
+                      2단계 카드에서 먼저 고쳤는데 이 모달만 안 따라와 있었다. */}
+                  <span className="text-[14px] leading-[22px] font-medium text-ink">
                     {rec.pattern}
                   </span>
                   {/* 고른 안만 글자를 고칠 수 있다. 안 쓸 카피를 다듬는 데
@@ -398,7 +402,10 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
                         e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
                         setCopyEditIndex(isEditing ? null : index);
                       }}
-                      className="ml-auto text-[13px] leading-[20px] font-medium text-fill-strong underline underline-offset-2 transition-colors duration-150 hover:text-ink"
+                      // 2단계 "수정"과 같은 컴포넌트를 쓴다. 여기만 13/20에
+                      // fill-strong으로 따로 적혀 있어서 같은 뜻이 다르게 보였고,
+                      // 높이 20px이라 터치 타깃 24×24에도 못 미쳤다.
+                      className={`${TEXT_BUTTON} ml-auto`}
                     >
                       {isEditing ? '완료' : '직접 수정'}
                     </button>

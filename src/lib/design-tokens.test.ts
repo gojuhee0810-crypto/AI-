@@ -107,7 +107,6 @@ test('shimmer가 하드코딩 hex 대신 토큰을 쓴다', () => {
  */
 const KNOWN_INPUT_COPIES = [
   'src/components/ai-banner/Step1ImagePanel.tsx', // 배지 문구 입력이 BASE+NORMAL을 손으로 재작성
-  'src/components/ai-banner/Step2CopyPanel.tsx', // 카피 수정 인풋 2개가 인라인(배경·placeholder 빠짐)
 ];
 
 test('입력칸 스타일을 직접 적은 파일이 늘지 않는다', () => {
@@ -160,7 +159,6 @@ const KNOWN_OFF_SCALE: Record<number, string[]> = {
   ],
   13: [
     'src/components/ai-banner/Step1ImagePanel.tsx',
-    'src/components/ai-banner/Step3ReviewPanel.tsx',
     'src/components/ai-banner/Toast.tsx',
     'src/components/shell/StepIndicator.tsx',
   ],
