@@ -10,21 +10,23 @@ import { Step1ImagePanel } from '@/components/ai-banner/Step1ImagePanel';
 import { Step2CopyPanel } from '@/components/ai-banner/Step2CopyPanel';
 import { Step3ReviewPanel } from '@/components/ai-banner/Step3ReviewPanel';
 import { PreviewPanel } from '@/components/ai-banner/PreviewPanel';
+import { CharCount } from '@/components/ai-banner/CharCounter';
 import { Toast } from '@/components/ai-banner/Toast';
-import { inputClass } from '@/components/ai-banner/fields';
+import { FORM_HELPER, FORM_LABEL, inputClass } from '@/components/ai-banner/fields';
+import { TONE_CLASS } from '@/components/ai-banner/buttons';
 import { clearFlowState, loadFlowState, saveFlowState } from '@/lib/flow-state-storage';
 import {
   INITIAL_FLOW_STATE,
   MATERIAL_NAME_LIMIT,
   isStepComplete,
-  resolveBrandButtons,
+  resolveButtonTone,
   type AiBannerFlowState,
 } from '@/types/banner-flow';
 
 /** 단계별 Primary 버튼 문구 — Figma 실측 */
 const NEXT_LABEL: Record<1 | 2 | 3, string> = {
   1: '카피 문구 생성하러가기',
-  2: '최종 화면 넘어가기',
+  2: '소재 등록하러가기',
   3: '등록하고 심사 요청하기',
 };
 
@@ -38,6 +40,10 @@ export default function AiBannerStudioPage() {
   // 제출을 시도한 뒤에만 빈 필수 칸을 붉게 만든다. 처음부터 빨간 화면을 보여주면
   // 아직 하지도 않은 일을 잘못했다고 말하는 셈이다.
   const [showErrors, setShowErrors] = useState(false);
+  // 소재 이름만 예외다. 이건 다른 무엇보다 먼저 적어야 하는 칸이라, 하단 CTA까지
+  // 가지 않아도 비워둔 채 벗어나거나 이미지를 생성하려 하면 그 자리에서 알린다.
+  // (2026-08-11 사용자 확정: "무조건 소재 이름부터 안 적으면 에러")
+  const [nameTouched, setNameTouched] = useState(false);
   const materialNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -61,14 +67,21 @@ export default function AiBannerStudioPage() {
   function handleReset() {
     setState(INITIAL_FLOW_STATE);
     setShowErrors(false);
+    setNameTouched(false);
     clearFlowState();
   }
 
+  /** 소재 이름을 비운 채 다음 일을 하려 할 때 — 그 칸으로 데려가고 붉게 만든다. */
+  function requireMaterialName() {
+    setNameTouched(true);
+    materialNameRef.current?.focus();
+  }
+
   const canGoNext = isStepComplete(state, state.step);
-  // 옐로우 여부는 resolveBrandButtons 하나가 정한다 — 여기서 따로 판단하면
-  // 생성 버튼과 나란히 두 개가 노래진다(실제로 그랬다).
-  const isCtaPrimary = resolveBrandButtons(state).includes('submit');
-  const hasNameError = showErrors && !state.materialName.trim();
+  // 색은 resolveButtonTone 하나가 정한다 — 여기서 따로 판단하면 생성 버튼과
+  // 나란히 두 개가 노래진다(실제로 그랬다).
+  const ctaTone = resolveButtonTone(state, 'submit');
+  const hasNameError = (showErrors || nameTouched) && !state.materialName.trim();
 
   /**
    * 다음 단계 버튼. 아직 못 넘어가는 상태여도 누를 수 있게 둔다.
@@ -123,9 +136,9 @@ export default function AiBannerStudioPage() {
             <div className="mt-6 w-[523px] max-w-full">
               <label
                 htmlFor="materialName"
-                className="text-[18px] leading-7 font-medium text-ink"
+                className={FORM_LABEL}
               >
-                소재 이름 <span className="text-required">*</span>
+                소재 이름 <span className="text-error">*</span>
               </label>
               <input
                 ref={materialNameRef}
@@ -137,19 +150,18 @@ export default function AiBannerStudioPage() {
                 aria-invalid={hasNameError || undefined}
                 aria-describedby={hasNameError ? 'materialNameError' : undefined}
                 onChange={(e) => patch({ materialName: e.target.value })}
-                className={inputClass(hasNameError, 'mt-3 h-12')}
+                onBlur={() => setNameTouched(true)}
+                className={inputClass(hasNameError, 'mt-[15px] h-12')}
               />
-              <div className="mt-1.5 flex items-start justify-between gap-4 px-4">
+              <div className={`${FORM_HELPER} flex items-start justify-between gap-4`}>
                 <p
                   id="materialNameError"
                   role="alert"
-                  className="text-[12px] leading-[19px] text-required"
+                  className="text-[12px] leading-[19px] text-error"
                 >
                   {hasNameError ? '필수 입력 항목이에요.' : ''}
                 </p>
-                <p className="text-[12px] leading-[19px] tabular-nums text-ink">
-                  {state.materialName.length}/{MATERIAL_NAME_LIMIT}
-                </p>
+                <CharCount value={state.materialName} limit={MATERIAL_NAME_LIMIT} />
               </div>
             </div>
           )}
@@ -177,6 +189,7 @@ export default function AiBannerStudioPage() {
                 state={state}
                 patch={patch}
                 showErrors={showErrors}
+                onMissingMaterialName={requireMaterialName}
               />
             )}
             {state.step === 2 && (
@@ -203,11 +216,7 @@ export default function AiBannerStudioPage() {
           <button
             type="button"
             onClick={handleNext}
-            className={`h-12 min-w-[222px] rounded-[24px] px-6 text-[16px] leading-[26px] font-medium transition-[background-color,scale] duration-150 active:scale-[0.96] ${
-              isCtaPrimary
-                ? 'bg-brand text-ink hover:bg-[#f2df00]'
-                : 'bg-fill text-ink-muted hover:bg-[#e5e9ec]'
-            }`}
+            className={`h-12 min-w-[222px] rounded-[24px] px-6 text-[16px] leading-[26px] font-medium transition-[background-color,scale] duration-150 active:scale-[0.96] ${TONE_CLASS[ctaTone]}`}
           >
             {NEXT_LABEL[state.step]}
           </button>

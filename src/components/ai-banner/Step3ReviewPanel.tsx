@@ -14,7 +14,8 @@
 
 import { useId, useState } from 'react';
 import { EditDialog } from '@/components/ai-banner/EditDialog';
-import { inputClass } from '@/components/ai-banner/fields';
+import { FORM_FIELD, FORM_HELPER, FORM_LABEL, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
+import { CharCount, CharCounter } from '@/components/ai-banner/CharCounter';
 import { Radio } from '@/components/ai-banner/Radio';
 import {
   IMAGE_STYLE_LABEL,
@@ -42,29 +43,15 @@ interface Props {
 /** 입력 라벨 — 1·2단계와 같은 18/28 Medium */
 function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor: string }) {
   return (
-    <label htmlFor={htmlFor} className="text-[18px] leading-7 font-medium text-ink">
+    <label htmlFor={htmlFor} className={FORM_LABEL}>
       {children}
     </label>
   );
 }
 
-/** 글자수 — 초과하면 빨간색. LLM은 글자를 못 세므로 코드가 표시한다. */
-function CharCounter({ value, limit }: { value: string; limit: number }) {
-  return (
-    <p className="mt-1.5 px-4 text-right">
-      <span
-        className={`text-[12px] leading-[19px] tabular-nums ${
-          value.length > limit ? 'text-required' : 'text-ink-muted'
-        }`}
-      >
-        {value.length}/{limit}
-      </span>
-    </p>
-  );
-}
-
-const INPUT_CLASS =
-  'w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink';
+// 입력칸 스타일을 여기 또 적어두지 않는다. 한때 INPUT_CLASS라는 사본이 있었고,
+// fields.ts에 block을 넣어 textarea 아래 디센더 여백을 없앴을 때 이 화면만
+// 안 따라와서 카운터 간격이 6이 아니라 12.5였다. inputClass() 하나만 쓴다.
 
 /**
  * 글자수를 입력칸 안 오른쪽에 넣은 입력. 아래에 따로 한 줄을 두면 칸마다 20px씩
@@ -91,11 +78,9 @@ function CompactField({
         }`}
       />
       <span
-        className={`pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[12px] leading-[19px] tabular-nums ${
-          isOver ? 'text-required' : 'text-ink-faint'
-        }`}
+        className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[12px] leading-[19px]"
       >
-        {value.length}/{limit}
+        <CharCount value={value} limit={limit} />
       </span>
     </span>
   );
@@ -122,7 +107,7 @@ function EditRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-4 px-5 py-4 text-left transition-colors duration-150 hover:bg-sidebar"
+      className="flex w-full items-center gap-4 py-4 text-left transition-colors duration-150 hover:bg-sidebar"
     >
       {/* 라벨 폭을 고정해 값들이 한 줄로 정렬된다 — 눈이 값만 훑고 내려갈 수 있다 */}
       <span className="w-[76px] shrink-0 text-[16px] leading-[26px] text-ink-muted">{label}</span>
@@ -245,11 +230,11 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
         : IMAGE_TYPE_LABEL.graphic;
 
   return (
-    <div className="flex flex-col gap-[42px]">
-      <section className="flex flex-col gap-3">
+    <div className={FORM_STACK}>
+      <section className={FORM_FIELD}>
         <h3 className="text-[18px] leading-7 font-medium text-ink">선택한 소재 정보</h3>
 
-        <div className="divider-fade flex flex-col overflow-hidden rounded-xl border border-line bg-surface">
+        <div className="divider-rows flex flex-col overflow-hidden rounded-xl border border-line bg-surface">
           <EditRow label="소재 이름" onClick={() => openEdit('name')}>
             <span className="block text-[16px] leading-[26px] text-pretty text-ink">
               {state.materialName}
@@ -286,7 +271,7 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
       </section>
 
       {/* 안내 문구 — 배너 하단에 함께 노출된다. 미리보기에 바로 반영된다. */}
-      <section className="flex flex-col gap-3">
+      <section className={FORM_FIELD}>
         <FieldLabel htmlFor={noticeId}>안내 문구</FieldLabel>
         <div>
           <textarea
@@ -296,16 +281,16 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
             placeholder="심의필 등 안내 문구가 필요할 경우 입력해주세요"
             value={state.noticeText}
             onChange={(e) => patch({ noticeText: e.target.value })}
-            className={`h-[76px] resize-none py-3 ${INPUT_CLASS}`}
+            className={inputClass(false, "h-[76px] resize-none py-3")}
           />
           <CharCounter value={state.noticeText} limit={NOTICE_TEXT_LIMIT} />
         </div>
       </section>
 
       {/* 랜딩 URL — 등록 필수값 */}
-      <section className="flex flex-col gap-3">
+      <section className={FORM_FIELD}>
         <FieldLabel htmlFor={landingId}>
-          랜딩URL <span className="text-required">*</span>
+          랜딩URL <span className="text-error">*</span>
         </FieldLabel>
         <div>
           <input
@@ -323,7 +308,7 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
             <p
               id={`${landingId}-error`}
               role="alert"
-              className="mt-1.5 px-4 text-[12px] leading-[19px] text-required"
+              className={`${FORM_HELPER} text-error`}
             >
               {urlError}
             </p>
@@ -332,7 +317,7 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
       </section>
 
       {/* 심사 참고사항 — 심사 담당자에게만 전달되고 배너에는 안 나온다 */}
-      <section className="flex flex-col gap-3">
+      <section className={FORM_FIELD}>
         <FieldLabel htmlFor={reviewNoteId}>심사 참고사항</FieldLabel>
         <div>
           <textarea
@@ -342,7 +327,7 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
             placeholder="소재 심사 담당자에게 전달할 의견이 있는 경우 입력해주세요"
             value={state.reviewNote}
             onChange={(e) => patch({ reviewNote: e.target.value })}
-            className={`h-[180px] resize-none py-3 ${INPUT_CLASS}`}
+            className={inputClass(false, "h-[180px] resize-none py-3")}
           />
           <CharCounter value={state.reviewNote} limit={REVIEW_NOTE_LIMIT} />
         </div>
@@ -372,7 +357,7 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
           placeholder="소재 이름을 입력해주세요"
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
-          className={`h-12 ${INPUT_CLASS}`}
+          className={inputClass(false, "h-12")}
         />
         <CharCounter value={draftName} limit={MATERIAL_NAME_LIMIT} />
       </EditDialog>
@@ -387,14 +372,14 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
         onClose={() => setEditing(null)}
         onSave={saveEdit}
       >
-        <div className="divider-fade flex flex-col rounded-lg border border-line">
+        <div className="divider-rows flex flex-col rounded-lg border border-line [--gutter:16px]">
           {draftCopies.map((rec, index) => {
             const isSelected = draftCopyIndex === index;
             const isEditing = isSelected && copyEditIndex === index;
             return (
               <label
                 key={rec.pattern}
-                className="flex cursor-pointer flex-col gap-2 px-4 py-3 transition-colors duration-150 hover:bg-sidebar"
+                className="flex cursor-pointer flex-col gap-2 py-3 transition-colors duration-150 hover:bg-sidebar"
               >
                 <span className="flex items-center gap-2">
                   <input

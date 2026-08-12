@@ -16,15 +16,16 @@ import {
   BADGE_TEXT_LIMIT,
   IMAGE_STYLE_LABEL,
   IMAGE_TYPE_LABEL,
-  resolveBrandButtons,
+  resolveButtonTone,
   type AiBannerFlowState,
   type BadgeStyle,
   type ImageSourceType,
 } from '@/types/banner-flow';
 import { AlertDialog } from '@/components/ai-banner/AlertDialog';
 import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
-import { CHIP_BASE, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
-import { inputClass } from '@/components/ai-banner/fields';
+import { CharCounter } from '@/components/ai-banner/CharCounter';
+import { aiGenerateButtonClass } from '@/components/ai-banner/buttons';
+import { FORM_FIELD, FORM_HELPER, FORM_LABEL, FORM_OPTIONS, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { Radio } from '@/components/ai-banner/Radio';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
@@ -47,6 +48,8 @@ interface Props {
   patch: (next: Partial<AiBannerFlowState>) => void;
   /** 제출을 시도했는데 못 넘어간 상태 — 빈 필수 칸을 붉게 표시한다. */
   showErrors: boolean;
+  /** 소재 이름이 비었는데 이미지를 만들려 할 때. 그 칸은 이 화면 밖(구분선 위)에 있다. */
+  onMissingMaterialName: () => void;
 }
 
 // 문구는 banner-flow.ts가 갖고 있다 — 3단계 확인 화면이 같은 이름을 써야 한다.
@@ -104,13 +107,13 @@ function SpecList({ items }: { items: string[] }) {
 
 function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
   return (
-    <label htmlFor={htmlFor} className="text-[18px] leading-7 font-medium text-ink">
-      {children} <span className="text-required">*</span>
+    <label htmlFor={htmlFor} className={FORM_LABEL}>
+      {children} <span className="text-error">*</span>
     </label>
   );
 }
 
-export function Step1ImagePanel({ state, patch, showErrors }: Props) {
+export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialName }: Props) {
   const objectId = useId();
   const badgeTextId = useId();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -125,9 +128,8 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
   const isProduct = state.imageType === 'product';
   const hasInput = state.primaryObject.trim().length > 0;
   const hasResult = state.images.length > 0;
-  // 옐로우 판단은 resolveBrandButtons 하나가 한다 — 화면마다 따로 쓰면
-  // 하단 CTA와 동시에 노래지는 상태가 생긴다(실제로 그랬다).
-  const isPrimaryAction = resolveBrandButtons(state).includes('generate-image');
+  // 색 판단은 resolveButtonTone 하나가 한다 — 화면마다 따로 쓰면 반드시 어긋난다.
+  const generateTone = resolveButtonTone(state, 'generate-image');
 
   /**
    * 규격을 통과한 파일만 data URL로 바꿔 넘긴다.
@@ -201,6 +203,12 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
 
   async function handleGenerate() {
     if (!hasInput || !isGraphic) return;
+    // 소재 이름이 먼저다. 이름 없이 만든 이미지는 나중에 무엇을 위한 소재였는지
+    // 알 수 없고, 3단계 등록에서 어차피 막힌다.
+    if (!state.materialName.trim()) {
+      onMissingMaterialName();
+      return;
+    }
     patch({ isGeneratingImages: true, partialErrors: [], selectedImageStyle: null });
     try {
       const data = await callGenerate({ primaryObject: state.primaryObject });
@@ -219,34 +227,19 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
     }
   }
 
-  async function handleRegenerate(style: ImageStyleKey) {
-    patch({ regeneratingStyle: style });
-    try {
-      const data = await callGenerate({
-        primaryObject: state.primaryObject,
-        regenerateStyle: style,
-      });
-      const newImage = data.images[0];
-      if (newImage) {
-        patch({
-          images: [...state.images.filter((img) => img.style !== style), newImage],
-          partialErrors: state.partialErrors.filter((e) => e.style !== style),
-        });
-      }
-    } finally {
-      patch({ regeneratingStyle: null });
-    }
-  }
+  // 스타일 한 종만 다시 만드는 handleRegenerate는 지웠다 — 카드별 재생성 버튼을
+  // 없애면서 부르는 곳이 사라졌다. /api/generate-image의 regenerateStyle 옵션은
+  // 그대로 남아 있으니, 다시 필요해지면 이 자리에 되살리면 된다.
 
   return (
-    <div className="flex flex-col gap-[42px]">
+    <div className={FORM_STACK}>
       {/* 이미지 유형 */}
-      <section className="flex flex-col gap-3">
+      <section className={FORM_FIELD}>
         <div className="flex items-center gap-2">
           <FieldLabel>이미지 유형</FieldLabel>
           <InfoTooltip text="아이콘은 AI가 자동생성하고 제품 이미지는 업로드 해주세요" />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className={FORM_OPTIONS}>
           {IMAGE_TYPE_ORDER.map((value) => (
             // 선택 표시는 라디오 하나로만 한다. 테두리 색까지 같이 바뀌면 인풋 포커스와
             // 뒤섞여 오히려 무엇이 선택된 건지 흐려진다. 호버는 연한 회색 배경만.
@@ -274,7 +267,7 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
       {/* 그래픽 아이콘 — 오브젝트 입력 + AI 생성 */}
       {isGraphic && (
         <>
-          <section className="flex flex-col gap-3">
+          <section className={FORM_FIELD}>
             <FieldLabel htmlFor={objectId}>오브젝트 명칭</FieldLabel>
             <div>
               <input
@@ -286,27 +279,29 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
                 onChange={(e) => patch({ primaryObject: e.target.value })}
                 className={inputClass(showErrors && !hasInput, 'h-12')}
               />
-              <p className="mt-1.5 px-4 text-right text-[12px] leading-[19px] tabular-nums text-ink">
-                {state.primaryObject.length}/15
-              </p>
+              <CharCounter value={state.primaryObject} limit={15} />
             </div>
 
-            {/* 결과가 나온 뒤에는 못 누르게 막는다. 카드마다 "다시 생성하기"가 있어
-                여기서 또 전체 생성을 돌리면 방금 고른 것이 통째로 날아간다. */}
+            {/* 다시 만드는 자리는 여기 하나다. 예전엔 카드마다 "다시 생성하기"가
+                따로 있었는데, 카드의 주 액션인 "고르기"와 뒤섞여 무엇을 누르는
+                자리인지 흐려졌다(2026-08-11 사용자 확정). */}
             <button
               type="button"
-              disabled={!hasInput || state.isGeneratingImages || hasResult}
-              title={hasResult ? '다시 만들려면 각 카드의 "다시 생성하기"를 눌러주세요' : undefined}
+              disabled={!hasInput || state.isGeneratingImages}
               onClick={handleGenerate}
-              className={aiGenerateButtonClass(isPrimaryAction)}
+              className={aiGenerateButtonClass(generateTone)}
             >
               <span aria-hidden>✦</span>
-              {state.isGeneratingImages ? '생성 중…' : 'AI 이미지 2종 생성하기'}
+              {state.isGeneratingImages
+                ? '생성 중…'
+                : hasResult
+                  ? '다시 생성하기'
+                  : 'AI 이미지 2종 생성하기'}
             </button>
           </section>
 
           {/* AI 이미지 생성 — 결과 선택 */}
-          <section className="flex flex-col gap-3">
+          <section className={FORM_FIELD}>
             <h3 className="text-[18px] leading-7 font-medium text-ink">AI 이미지 생성</h3>
 
             {state.isGeneratingImages && <ProgressStatus messages={PROGRESS_MESSAGES} />}
@@ -328,9 +323,8 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 {STYLE_ORDER.map((style) => {
                   const image = state.images.find((img) => img.style === style);
-                  const isRegenerating = state.regeneratingStyle === style;
                   const isSelected = state.selectedImageStyle === style;
-                  const isBusy = state.isGeneratingImages || isRegenerating;
+                  const isBusy = state.isGeneratingImages;
 
                   return (
                     // 카드 전체가 선택 영역이다. 라디오·라벨만 누를 수 있으면
@@ -360,11 +354,6 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
                         >
                           {IMAGE_STYLE_LABEL[style]}
                         </span>
-                        {isSelected && (
-                          <span className="ml-auto text-[13px] leading-[20px] font-medium text-ink">
-                            선택됨
-                          </span>
-                        )}
                       </div>
 
                       {isBusy ? (
@@ -385,26 +374,6 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
                               생성되지 않았어요
                             </div>
                           )}
-
-                          {/* 실패한 카드에도 이 버튼이 있어야 한다. 예전엔 이미지가 있을
-                              때만 그려서, 한 장이 실패하면 그 카드에서는 손쓸 방법이 없고
-                              멀쩡한 다른 한 장까지 날리며 전체를 다시 돌려야 했다.
-
-                              옐로우로 바꾸지 않는다. 카드의 주 액션은 "고르기"인데
-                              카드에 마우스를 올릴 때마다 재생성 버튼이 켜지면 위계가
-                              뒤집히고, 하단 CTA와 함께 화면에 옐로우가 둘이 된다
-                              (디자인 시스템 §4 "옐로우는 화면에 하나만"). */}
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={(e) => {
-                              e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
-                              handleRegenerate(style);
-                            }}
-                            className={`${CHIP_BASE} self-center border border-line bg-fill text-ink hover:bg-[#e5e9ec] disabled:cursor-not-allowed`}
-                          >
-                            다시 생성하기
-                          </button>
                         </>
                       )}
                     </label>
@@ -416,7 +385,7 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
             {state.partialErrors.map((err) => (
               <p
                 key={err.style}
-                className="rounded-lg bg-[#fff4f4] px-4 py-3 text-[14px] leading-[22px] text-pretty text-required"
+                className="rounded-lg bg-error-surface px-4 py-3 text-[14px] leading-[22px] text-pretty text-error"
               >
                 {IMAGE_STYLE_LABEL[err.style]} 생성 실패 — {err.message}
               </p>
@@ -427,7 +396,7 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
 
       {/* 제품 이미지 — 직접 업로드 */}
       {isProduct && (
-        <section className="flex flex-col gap-3">
+        <section className={FORM_FIELD}>
           <FieldLabel>제품 이미지 업로드</FieldLabel>
           <input
             ref={fileInputRef}
@@ -482,7 +451,7 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
       )}
 
       {/* 배너 강조 요소 추가 */}
-      <section className="flex flex-col gap-3">
+      <section className={FORM_FIELD}>
         <h3 className="text-[18px] leading-7 font-medium text-ink">배너 강조 요소 추가</h3>
         <p className="flex items-start gap-2 text-[14px] leading-[22px] text-ink-muted">
           <span aria-hidden className="pt-2 text-[6px] leading-none">
@@ -533,11 +502,9 @@ export function Step1ImagePanel({ state, patch, showErrors }: Props) {
                   placeholder="예) 5% 할인"
                   value={state.badgeText}
                   onChange={(e) => patch({ badgeText: e.target.value })}
-                  className="mt-2 h-11 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+                  className="mt-[15px] h-12 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
                 />
-                <p className="mt-1.5 px-4 text-right text-[12px] leading-[19px] tabular-nums text-ink-muted">
-                  {state.badgeText.length}/{BADGE_TEXT_LIMIT}
-                </p>
+                <CharCounter value={state.badgeText} limit={BADGE_TEXT_LIMIT} />
               </div>
             </div>
 

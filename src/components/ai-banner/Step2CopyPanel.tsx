@@ -5,21 +5,26 @@
 //
 // 타겟 입력란은 없다: 앞 단계(광고그룹)에서 이미 정해져 넘어오는 값이고, 현 시점
 // 전 타겟을 2030으로 가정한다(2026-08-06 확정). 서버가 기본값을 채운다.
-// 2026-08-08: Figma 실측값으로 재구성. 패턴명은 액센트 블루, 카드는 테두리 방식,
-// 근거는 회색 박스에 ✦ 아이콘과 함께 둔다.
+// 2026-08-11: 카드 안 위계를 뒤집었다. 회색 면은 근거가 아니라 실물 카피가 갖는다 —
+// 채워진 면은 "여기가 중요하다"는 약속인데, 그걸 설명문에 주고 광고에 나갈 두 줄은
+// 맨몸으로 뒀었다. 근거는 면 없이 카피 아래에 둔다(위로 올리면 길이가 카드마다
+// 달라 카피 시작 높이가 어긋나고 셋을 나란히 비교할 수 없다).
+// 패턴명은 파랑이 아니라 검정 볼드다 — 파랑은 링크 색이라 못 누르는 글자에
+// 누르라는 신호를 붙이게 된다.
 
 import { useId, useState } from 'react';
 import {
   MAINTITLE_LIMIT,
   SUBTITLE_LIMIT,
-  resolveBrandButtons,
+  resolveButtonTone,
   resolveObjectTag,
   type AiBannerFlowState,
 } from '@/types/banner-flow';
-import { CHIP_OUTLINE, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
-import { inputClass } from '@/components/ai-banner/fields';
+import { TEXT_BUTTON, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
+import { FORM_FIELD, FORM_HELPER, FORM_LABEL, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
+import { CharCounter } from '@/components/ai-banner/CharCounter';
 import { Radio } from '@/components/ai-banner/Radio';
 import type {
   GenerateCopyRequest,
@@ -46,19 +51,6 @@ const PROGRESS_MESSAGES = [
 
 const BENEFIT_LIMIT = 25;
 
-/** 글자수 초과를 빨간색으로 알린다. LLM은 글자를 못 세므로 코드가 표시한다. */
-function CharCounter({ value, limit }: { value: string; limit: number }) {
-  return (
-    <span
-      className={`text-[12px] leading-[19px] tabular-nums ${
-        value.length > limit ? 'text-required' : 'text-ink-muted'
-      }`}
-    >
-      {value.length}/{limit}
-    </span>
-  );
-}
-
 export function Step2CopyPanel({ state, patch, showErrors }: Props) {
   const benefitId = useId();
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -66,8 +58,8 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
 
   const hasInput = state.benefit.trim().length > 0;
   const hasResult = state.copyRecommendations.length > 0;
-  // 옐로우 판단은 resolveBrandButtons 하나가 한다(Step1·하단 CTA와 같은 근거).
-  const isPrimaryAction = resolveBrandButtons(state).includes('generate-copy');
+  // 색 판단은 resolveButtonTone 하나가 한다(Step1·하단 CTA와 같은 근거).
+  const generateTone = resolveButtonTone(state, 'generate-copy');
 
   async function handleGenerate() {
     if (!hasInput) return;
@@ -109,12 +101,12 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-[42px]">
+    <div className={FORM_STACK}>
       {/* 캠페인 혜택 */}
-      <section className="flex flex-col gap-3">
+      <section className={FORM_FIELD}>
         <div className="flex items-center gap-2">
-          <label htmlFor={benefitId} className="text-[18px] leading-7 font-medium text-ink">
-            캠페인 혜택 <span className="text-required">*</span>
+          <label htmlFor={benefitId} className={FORM_LABEL}>
+            캠페인 혜택 <span className="text-error">*</span>
           </label>
           <InfoTooltip text="혜택, 조건, 기한을 적어주세요 추천 문구가 더 정확해져요" />
         </div>
@@ -129,16 +121,14 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
             onChange={(e) => patch({ benefit: e.target.value })}
             className={inputClass(showErrors && !hasInput, 'h-[139px] resize-none py-3')}
           />
-          <p className="mt-1.5 px-4 text-right">
-            <CharCounter value={state.benefit} limit={BENEFIT_LIMIT} />
-          </p>
+          <CharCounter value={state.benefit} limit={BENEFIT_LIMIT} />
         </div>
 
         <button
           type="button"
           disabled={!hasInput || state.isGeneratingCopy}
           onClick={handleGenerate}
-          className={aiGenerateButtonClass(isPrimaryAction)}
+          className={aiGenerateButtonClass(generateTone)}
         >
           <span aria-hidden>{hasResult ? '↻' : '✦'}</span>
           {state.isGeneratingCopy
@@ -150,13 +140,13 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
       </section>
 
       {error && (
-        <p className="rounded-lg bg-[#fff4f4] px-4 py-3 text-[14px] leading-[22px] text-pretty text-required">
+        <p className="rounded-lg bg-error-surface px-4 py-3 text-[14px] leading-[22px] text-pretty text-error">
           카피 생성에 실패했습니다 — {error}
         </p>
       )}
 
       {/* AI 추천 카피 */}
-      <section className="flex flex-col gap-3">
+      <section className={FORM_FIELD}>
         <h3 className="text-[18px] leading-7 font-medium text-ink">AI 추천 카피</h3>
 
         {state.isGeneratingCopy ? (
@@ -187,7 +177,7 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
           // 카드를 따로 세우지 않고 한 박스에 얇은 선으로만 나눈다. 셋은 같은 질문에
           // 대한 답이라 하나의 목록으로 읽혀야 비교가 쉽다 — 카드로 떼어놓으면
           // 각각이 독립된 것처럼 보여 눈이 셋을 오가지 않는다.
-          <div className="divider-fade flex flex-col overflow-hidden rounded-lg border border-line bg-surface">
+          <div className="divider-rows flex flex-col overflow-hidden rounded-lg border border-line bg-surface">
             {state.copyRecommendations.map((rec, index) => {
               const isSelected = state.selectedCopyIndex === index;
               // 선택과 묶는다. 수정 중에 다른 카피를 고르면 닫아야 하는데,
@@ -198,20 +188,27 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                   key={rec.pattern}
                   // 선택 표시는 라디오 하나로만. 테두리 색까지 바뀌면 인풋 포커스와
                   // 뒤섞여 오히려 흐려진다. 호버는 연한 회색 배경만.
-                  className="flex cursor-pointer flex-col gap-4 p-5 transition-colors duration-150 hover:bg-sidebar"
+                  className="flex cursor-pointer flex-col gap-4 py-5 transition-colors duration-150 hover:bg-sidebar"
                 >
                 <input
                   type="radio"
                   name="selectedCopy"
                   checked={isSelected}
                   onChange={() => patch({ selectedCopyIndex: index })}
+                  // 라벨 전체를 읽히게 두면 "상황기반+문제제기 요즘 이런 고민
+                  // 있으셨죠 지금 확인해보세요 …"가 통째로 선택지 이름이 되어
+                  // 귀로는 셋을 비교할 수 없다. 이름만 남긴다.
+                  aria-label={rec.pattern}
                   className="sr-only"
                 />
 
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-2">
                     <Radio checked={isSelected} />
-                    <span className="text-[16px] leading-[26px] font-medium text-accent">
+                    {/* 파랑(ico&text/blue)은 링크 색이라, 누를 수 없는 글자에
+                        누르라는 신호를 붙이게 된다. 굵기와 색 농도로 가른다 —
+                        새 색을 만들지 않고 이미 있는 토큰만 쓴다. */}
+                    <span className="text-[16px] leading-[26px] font-medium text-ink">
                       {rec.pattern}
                     </span>
                   </span>
@@ -225,9 +222,8 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                         e.preventDefault(); // label 안이라 선택까지 번지는 걸 막는다
                         setEditingIndex(isEditing ? null : index);
                       }}
-                      className={CHIP_OUTLINE}
+                      className={TEXT_BUTTON}
                     >
-                      <span aria-hidden>✎</span>
                       {isEditing ? '완료' : '수정'}
                     </button>
                   )}
@@ -264,10 +260,19 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                     </div>
                   </div>
                 ) : (
-                  // 크기는 디자인 시스템 타입 스케일(§4)에서 고른다. 18/24는 실제
-                  // 배너보다 커서 카드가 문서처럼 읽혔다. 80%인 14.4/19.2를 그대로
-                  // 쓰지 않는 건 스케일에 없는 값이라 여기만 튀기 때문이다.
-                  <div className="pl-8">
+                  // 면은 실물 카피가 가진다. 예전엔 근거가 면을 갖고 카피가 맨몸으로
+                  // 있었는데, 채워진 면은 "여기가 중요하다"는 약속이라 시선이
+                  // 설명으로 갔다. 광고에 나갈 두 줄이 주인공이다.
+                  //
+                  // 회색으로 가르고 테두리를 안 쓴다 — 카드 테두리 + 항목 구분선까지
+                  // 같은 #cfd6dc가 세 겹이 되면 어느 선이 무엇을 나누는지 흐려진다.
+                  //
+                  // sunken(grey50)이 아니라 fill(grey100)인 건 호버 배경이 sidebar와
+                  // 같은 grey50이라, 마우스를 올리면 면이 사라져 보이기 때문이다.
+                  //
+                  // 크기는 타입 스케일(§4)에서 고른다. 18/24는 실제 배너보다 커서
+                  // 카드가 문서처럼 읽혔다.
+                  <div className="ml-8 rounded-lg bg-fill px-4 py-3">
                     <p className="text-[14px] leading-[22px] font-medium text-ink-muted">
                       {rec.subtitle}
                     </p>
@@ -277,17 +282,15 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                   </div>
                 )}
 
-                  {rec.reason && (
-                    // 호버 배경(sidebar)과 같은 색이면 마우스를 올렸을 때 근거 박스가
-                    // 사라진 것처럼 보인다 — 한 단계 진한 fill을 쓴다.
-                    <div className="flex items-start gap-3 rounded-xl bg-fill px-4 py-3">
-                      <span aria-hidden className="text-[18px] leading-[27px] text-ink-muted">
+                  {rec.reason && !isEditing && (
+                    // 근거는 면 없이 카피 아래. 위로 올리면 근거 길이가 카드마다
+                    // 달라서 카피 시작 높이가 어긋나고, 셋을 나란히 비교할 수 없다.
+                    <p className="ml-8 flex items-start gap-2 text-[14px] leading-[22px] text-pretty text-ink-muted">
+                      <span aria-hidden className="shrink-0">
                         ✦
                       </span>
-                      <p className="text-[15px] leading-[24px] text-pretty text-[#656a6e]">
-                        {rec.reason}
-                      </p>
-                    </div>
+                      {rec.reason}
+                    </p>
                   )}
                 </label>
               );
