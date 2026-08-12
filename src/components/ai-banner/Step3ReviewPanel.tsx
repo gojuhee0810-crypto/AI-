@@ -13,6 +13,7 @@
 // 확인 화면은 확인만 시키고 고치지는 못하게 만든다.
 
 import { useId, useState } from 'react';
+import { IconPenHorizlineLine } from '@karrotmarket/react-monochrome-icon';
 import { EditDialog } from '@/components/ai-banner/EditDialog';
 import { FORM_FIELD, FORM_HELPER, FORM_LABEL, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
 import { CharCount, CharCounter } from '@/components/ai-banner/CharCounter';
@@ -91,7 +92,7 @@ function CompactField({
  *
  * 줄마다 알약 버튼을 달면 세 개가 세로로 늘어서 목록이 시끄럽고, 정작 누를 영역은
  * 그 작은 알약뿐이다. 줄 전체를 누르게 하면 조용해지면서 클릭 영역은 넓어진다.
- * 오른쪽 꺾쇠는 "여기서 뭔가 열린다"는 표시만 한다.
+ * 오른쪽 연필은 "여기서 고칠 수 있다"는 표시만 한다.
  */
 function EditRow({
   label,
@@ -112,20 +113,15 @@ function EditRow({
       {/* 라벨 폭을 고정해 값들이 한 줄로 정렬된다 — 눈이 값만 훑고 내려갈 수 있다 */}
       <span className="w-[76px] shrink-0 text-[16px] leading-[26px] text-ink-muted">{label}</span>
       <span className="min-w-0 flex-1">{children}</span>
-      {/* 화면에는 꺾쇠만 보이지만, 스크린리더에는 무엇을 하는 버튼인지 알려준다 */}
+      {/* 꺾쇠(>)는 "다른 화면으로 간다"는 뜻인데 이 줄은 모달을 연다. 연필로 바꿨다.
+          2단계 카피 카드의 "수정"과 같은 뜻을 같은 그림으로 말한다.
+
+          색은 ink-faint(1.74)가 아니라 ink-muted(5.51)다 — 이 줄에서 "누를 수
+          있다"를 알려주는 유일한 시각 신호라 장식으로 볼 수 없다.
+
+          아이콘만 보이고 글자는 스크린리더에만 간다. */}
       <span className="sr-only">변경</span>
-      <svg
-        aria-hidden
-        viewBox="0 0 24 24"
-        className="size-5 shrink-0 text-ink-faint"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="m9 18 6-6-6-6" />
-      </svg>
+      <IconPenHorizlineLine aria-hidden className="size-5 shrink-0 text-ink-muted" />
     </button>
   );
 }

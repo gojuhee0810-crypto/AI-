@@ -44,11 +44,20 @@ AI 배너 스튜디오는 이러한 제작 과정을 이미지 생성부터 카�
 | 이미지 생성 설계 | `docs/02-design/features/image-generation.design.md` |
 | 카피 작성 규칙 | `docs/patterns/copy-patterns-v2.md` |
 | 매체 규격 (메인 14자 / 서브 15자 / 240×240 PNG) | `docs/guides/kakaopay-banner-guide.md` |
-| 어드민 디자인 시스템 | `docs/guides/admin-design-system.md` |
+| **디자인 시스템 (컴포넌트 28종·토큰·접근성)** | **`.claude/skills/adcenter-design-system/`** |
+| 화면 흐름·필드 정의·에러 표현 결정 | `docs/guides/admin-design-system.md` |
 | UI 폴리시 기준 | `docs/guides/ui-polish-checklist.md` |
 
-**컬러·폰트 토큰은 `src/app/globals.css`가 유일한 진실이다.** 문서에 값을 옮겨 적지 말 것 —
-두 곳에 있으면 반드시 어긋난다.
+**디자인 시스템은 `.claude/skills/adcenter-design-system/`이 유일한 기준이다.**
+별도 저장소를 심볼릭 링크로 걸어둔 것이고, 원본 광고센터 화면 실측 + Figma 변수
+추출값이다. 값이 갈리면 언제나 이쪽이 맞다.
+
+`src/app/globals.css`는 코드가 실제로 쓰는 값이다 — 시스템의 `2-tokens/tokens.css`와
+**대조할 대상**이지 기준이 아니다. 손으로 옮겨 적은 사본이라 갈라진다(2026-08-11
+감사에서 17개 중 16개 일치, 1개 의도적 이탈).
+
+**어느 문서에도 컴포넌트 값을 옮겨 적지 말 것.** 두 곳에 있으면 반드시 어긋난다 —
+`docs/guides/admin-design-system.md`가 그렇게 8곳 틀린 채 기준 노릇을 했다.
 
 ## 핵심 원칙
 - **코드로 확인 가능한 건 LLM에게 맡기지 않는다.** 글자수·중복·금칙어는 코드가 검사하고,

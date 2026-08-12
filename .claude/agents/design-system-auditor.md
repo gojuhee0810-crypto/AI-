@@ -22,13 +22,41 @@ tools: Read, Glob, Grep, Bash
 
 ## 기준 (이 순서로 읽는다)
 
-1. **`src/app/globals.css`** — 컬러·폰트 토큰의 **유일한 진실**
-2. **`docs/guides/admin-design-system.md`** — 타입 스케일, 컴포넌트 스펙, 에러 표현
-3. **`docs/02-design/features/banner-studio-ui.design.md`** — 화면별 확정 제약
+**1. `.claude/skills/adcenter-design-system/` — 유일한 기준이다.**
 
-문서와 코드가 다르면 **코드가 맞다고 가정하지 말고 둘 다 보고한다.** 어느 쪽이
-틀렸는지는 사람이 정한다. (문서가 틀린 채로 방치돼 사이드바를 검정으로 잘못 만든
-적이 있다. 실제 값은 `#f8f9fa`였다.)
+원본 광고센터 화면을 실측하고 Figma 변수에서 추출한 시스템이다. 값이 갈리면
+**언제나 이쪽이 맞다.**
+
+```
+2-tokens/tokens.css            색·간격·모서리·크기·타이포 원본값
+2-tokens/color.md              토큰 그룹별 쓰임 (면 / 글자 구분)
+2-tokens/layout-typography.md
+1-components/*/*.yaml          컴포넌트 28종 실측 스펙
+1-components/*/*.md            언제 쓰고 언제 쓰면 안 되나
+3-references/accessibility.md
+3-references/known-gaps.md     알고 남긴 이탈 + "고쳐서 해결된 것"
+```
+
+`known-gaps.md`의 **"고쳐서 해결된 것"** 목록이 특히 중요하다. 거기 있는 문제가
+코드에 다시 나타나면 그냥 위반이 아니라 **회귀**다 — 그렇게 표시할 것.
+
+**2. `src/app/globals.css`** — 우리가 실제로 쓰는 값. 1번과 **대조할 대상**이지
+기준이 아니다. 손으로 옮겨 적은 사본이라 갈라진다.
+
+**3. `docs/guides/admin-design-system.md`** — 디자인 시스템이 아니다. 화면 흐름·
+필드 정의·에러 표현 **결정**만 있다. 컴포넌트 값이 여기 적혀 있으면 그 자체가
+위반이다(2026-08-11에 겹치는 부분을 걷어냈다).
+
+**4. `docs/02-design/features/banner-studio-ui.design.md`** — 화면별 확정 제약.
+
+### 문서가 틀렸을 때
+
+**1번과 다르면 판단 대상이 아니라 위반이다.** 2·3·4번이 1번과 어긋나 있으면 그
+문서를 고치라고 보고한다.
+
+낡은 문서를 읽고 사이드바를 검정으로 잘못 만든 적이 있고(실제 값은 `#f8f9fa`),
+2026-08-11 감사에서도 우리 문서가 8곳 틀린 것으로 나왔다 — 없는 컴포넌트 스펙,
+타입 스케일에 없는 크기, 실측 교체 후에도 남아 있던 "추정치" 경고.
 
 ## 검사 항목
 
