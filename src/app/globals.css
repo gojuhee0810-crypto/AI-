@@ -9,14 +9,32 @@
   --color-header: #060b11;            /* Basic/black — 상단 GNB */
   --color-sidebar: #f8f9fa;           /* Basic/grey50 — 좌측 LNB, 미리보기 패널 */
   --color-brand: #ffeb00;             /* Semantic/yellow — Primary CTA */
+  /* 아직 누를 수 없는 Primary CTA. 회색으로 내리면 "이 버튼은 원래 회색"으로 읽혀
+     여기가 진행 버튼인지 알 수 없다. 옅은 노랑은 자리를 지키면서 아직 아님을 말한다.
+     원본 background/brand disabled와 같은 값이다. */
+  --color-brand-disabled: #fff9ad;    /* Semantic/yellow disabled */
   --color-ink: #060b11;               /* Basic/black — 본문 텍스트 */
-  --color-ink-muted: rgba(6, 11, 17, 0.48); /* black 48% — 보조 텍스트 */
+  /* 2026-08-11: black 48%(대비 3.47, AA 미달)에서 grey600으로 바꿨다.
+     원본의 보조 텍스트는 처음부터 ico&text/sub = grey600이다. 48% 토큰은
+     정의만 있고 "어느 컴포넌트에서도 쓰이지 않는다"고 명시돼 있다 —
+     원본에 없는 색을 만들어 쓰다 대비가 계속 모자랐다. */
+  --color-ink-muted: #606a74;         /* Basic/grey600 — 보조 텍스트. 대비 5.51 */
   --color-ink-faint: rgba(6, 11, 17, 0.24); /* black 24% — placeholder */
-  --color-required: #ff3c3c;          /* Semantic/red — 필수 표시 */
+  /* 빨강이 둘인 이유: 원본은 아이콘용과 글자용을 나눠 쓴다. #ff3c3c는 흰 배경에서
+     3.52라 글자에 쓰면 AA에 못 미치고, 원본도 "텍스트에는 금지"라고 못박아 뒀다.
+     빨간 글자는 반드시 --color-error를 쓴다. */
+  --color-required: #ff3c3c;          /* Semantic/red — 테두리·아이콘·배지 배경 전용 */
+  --color-error: #d42020;             /* Semantic/red700 — 빨간 글자 전용. 대비 5.21 */
+  --color-error-surface: #fff0f0;     /* Basic/red50 — 에러 입력칸·경고 배너 배경 */
   --color-line: #cfd6dc;              /* Basic/grey300 — 구분선·인풋 테두리 */
   --color-fill: #eff2f4;              /* Basic/grey100 — 보조 버튼 배경 */
+  /* ink-muted와 값이 같다(둘 다 Basic/grey600). 원본에서도 ico&text/sub와
+     background/reverse가 같은 원시값을 가리킨다 — 쓰임이 달라 이름을 나눠 둔다. */
   --color-fill-strong: #606a74;       /* Basic/grey600 — reverse 버튼 */
-  --color-accent: #008dff;            /* Semantic/blue — 배지 텍스트 */
+  /* 원본은 #008dff(Semantic/blue)지만 배지 배경(#e3f3ff) 위에서 2.96, 흰 배경에서도
+     3.36이라 14px 글자에 필요한 4.5를 못 넘는다. 원본 Badge 스펙 자체가 미달이다.
+     같은 계열에서 한 단계만 진하게 내렸다 — 배지 4.75 / 흰 배경 5.38. */
+  --color-accent: #006bc4;            /* Semantic/blue 조정 — 배지·강조 텍스트 */
   --color-accent-soft: #e3f3ff;       /* Basic/Blue50 — 배지 배경 */
 }
 
@@ -26,10 +44,13 @@
   --color-header: var(--color-header);
   --color-sidebar: var(--color-sidebar);
   --color-brand: var(--color-brand);
+  --color-brand-disabled: var(--color-brand-disabled);
   --color-ink: var(--color-ink);
   --color-ink-muted: var(--color-ink-muted);
   --color-ink-faint: var(--color-ink-faint);
   --color-required: var(--color-required);
+  --color-error: var(--color-error);
+  --color-error-surface: var(--color-error-surface);
   --color-line: var(--color-line);
   --color-fill: var(--color-fill);
   --color-fill-strong: var(--color-fill-strong);
@@ -70,25 +91,48 @@ body {
 /* 체커보드(.checkerboard)는 뺐다 — 생성 이미지가 투명 PNG라는 걸 광고주가 이미 알고
    있어서, 격자 무늬가 알려주는 것 없이 결과 이미지만 어지럽혔다(2026-08-09 확정). */
 
-/* 한 상자 안에서 항목을 나누는 선.
-   양 끝을 투명으로 흐린다 — 선이 상자 테두리까지 닿으면 격자처럼 보여서, 나누려던
-   것보다 훨씬 강하게 시선을 자른다. 색도 --color-line보다 연하게 둔다:
-   여기서 선은 경계가 아니라 "여기서 항목이 바뀐다"는 힌트일 뿐이다. */
-.divider-fade > * + * {
+/* ── 행 목록(.divider-rows) ─────────────────────────────────────────
+   한 상자 안에 항목을 세로로 쌓고 1px 실선으로 나눈다. 최종 등록의 "선택한 소재
+   정보", 카피 변경 모달의 카피 목록이 이 구조다.
+
+   구분선은 상자 폭을 다 채우지 않는다. 좌우로 거터(gutter)만큼 물러나 콘텐츠가
+   시작하는 자리에서 함께 시작한다 — 선이 상자 테두리까지 닿으면 바깥 테두리와
+   이어져 격자처럼 보이고, 나누려던 것보다 훨씬 강하게 시선을 자른다.
+
+       ┌─────────────────────────────┐
+       │      소재 이름   올리브영     │
+       │  ├───────────────────────┤  │  ← 거터만큼 안쪽에서 시작·끝
+       │      카피       지금 확인…   │
+       └─────────────────────────────┘
+        └┬┘                       └┬┘
+        거터                      거터
+
+   거터는 여기 한 곳에서 정한다. 행의 좌우 여백과 선의 좌우 여백이 같은 값을
+   봐야 어긋나지 않는다 — 예전엔 둘을 따로 적어서, 행 패딩만 바꾸면 선이 혼자
+   남거나 튀어나왔다.
+
+   기본 20(space/16보다 한 단계 넓은 원본 목록 실측값). 다른 값이 필요하면
+   컨테이너에 [--gutter:16px]를 준다. 행은 세로 여백만 갖는다.
+
+   거터는 컨테이너가 아니라 행이 갖는다. 컨테이너에 주면 호버 배경이 거터만큼
+   안쪽까지만 칠해져서, 둥근 상자 안에 회색 띠가 떠 있는 것처럼 보인다.
+
+   선은 가상요소에 그리되 background가 아니라 border-top으로 그린다. 1px짜리
+   배경 채우기는 브라우저가 소수 좌표 그대로 칠해서, 줌 배율이나 캡처 축소가
+   끼면 선마다 반픽셀에 걸리는 정도가 달라진다 — 어떤 선은 굵고 어떤 선은
+   얇아 보였다. border는 칠하기 전에 픽셀에 스냅되어 항상 같은 굵기가 된다. */
+.divider-rows > * {
+  padding-inline: var(--gutter, 20px);
+}
+
+.divider-rows > * + * {
   position: relative;
 }
 
-.divider-fade > * + *::before {
+.divider-rows > * + *::before {
   content: '';
   position: absolute;
-  inset-inline: 0;
+  inset-inline: var(--gutter, 20px);
   top: 0;
-  height: 1px;
-  background: linear-gradient(
-    to right,
-    transparent,
-    rgba(6, 11, 17, 0.08) 22%,
-    rgba(6, 11, 17, 0.08) 78%,
-    transparent
-  );
+  border-top: 1px solid var(--color-line);
 }
