@@ -10,9 +10,9 @@ import { Step1ImagePanel } from '@/components/ai-banner/Step1ImagePanel';
 import { Step2CopyPanel } from '@/components/ai-banner/Step2CopyPanel';
 import { Step3ReviewPanel } from '@/components/ai-banner/Step3ReviewPanel';
 import { PreviewPanel } from '@/components/ai-banner/PreviewPanel';
-import { CharCount } from '@/components/ai-banner/CharCounter';
+import { FormField, fieldProps } from '@/components/ai-banner/FormField';
 import { Toast } from '@/components/ai-banner/Toast';
-import { FORM_HELPER, FORM_LABEL, inputClass } from '@/components/ai-banner/fields';
+import { inputClass } from '@/components/ai-banner/fields';
 import { TONE_CLASS } from '@/components/ai-banner/buttons';
 import { clearFlowState, loadFlowState, saveFlowState } from '@/lib/flow-state-storage';
 import {
@@ -88,6 +88,7 @@ export default function AiBannerStudioPage() {
   // 나란히 두 개가 노래진다(실제로 그랬다).
   const ctaTone = resolveButtonTone(state, 'submit');
   const hasNameError = (showErrors || nameTouched) && !state.materialName.trim();
+  const nameError = hasNameError ? '필수 입력 항목이에요.' : null;
 
   /**
    * 다음 단계 버튼. 아직 못 넘어가는 상태여도 누를 수 있게 둔다.
@@ -144,35 +145,25 @@ export default function AiBannerStudioPage() {
               폭은 아래 폼 칸과 같은 523px(광고센터 기존 소재 폼 실측). */}
           {state.step === 1 && (
             <div className="mt-10 w-[523px] max-w-full">
-              <label
+              <FormField
+                label="소재 이름"
                 htmlFor="materialName"
-                className={FORM_LABEL}
+                required
+                error={nameError}
+                counter={{ value: state.materialName, limit: MATERIAL_NAME_LIMIT }}
               >
-                소재 이름 <span className="text-error">*</span>
-              </label>
-              <input
-                ref={materialNameRef}
-                id="materialName"
-                type="text"
-                maxLength={MATERIAL_NAME_LIMIT}
-                placeholder="소재 이름을 입력해주세요"
-                value={state.materialName}
-                aria-invalid={hasNameError || undefined}
-                aria-describedby={hasNameError ? 'materialNameError' : undefined}
-                onChange={(e) => patch({ materialName: e.target.value })}
-                onBlur={() => setNameTouched(true)}
-                className={inputClass(hasNameError, 'mt-[15px] h-12')}
-              />
-              <div className={`${FORM_HELPER} flex items-start justify-between gap-4`}>
-                <p
-                  id="materialNameError"
-                  role="alert"
-                  className="text-[12px] leading-[19px] text-error"
-                >
-                  {hasNameError ? '필수 입력 항목이에요.' : ''}
-                </p>
-                <CharCount value={state.materialName} limit={MATERIAL_NAME_LIMIT} />
-              </div>
+                <input
+                  {...fieldProps('materialName', true, nameError)}
+                  ref={materialNameRef}
+                  type="text"
+                  maxLength={MATERIAL_NAME_LIMIT}
+                  placeholder="소재 이름을 입력해주세요"
+                  value={state.materialName}
+                  onChange={(e) => patch({ materialName: e.target.value })}
+                  onBlur={() => setNameTouched(true)}
+                  className={inputClass(hasNameError, 'h-12')}
+                />
+              </FormField>
             </div>
           )}
         </div>

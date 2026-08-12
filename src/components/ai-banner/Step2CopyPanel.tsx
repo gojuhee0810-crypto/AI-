@@ -23,10 +23,11 @@ import {
   type AiBannerFlowState,
 } from '@/types/banner-flow';
 import { TEXT_BUTTON, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
-import { FORM_FIELD, FORM_LABEL, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
+import { FORM_FIELD, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
 import { CharCounter } from '@/components/ai-banner/CharCounter';
+import { FormField, fieldProps } from '@/components/ai-banner/FormField';
 import { Radio } from '@/components/ai-banner/Radio';
 import type {
   GenerateCopyRequest,
@@ -59,6 +60,8 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const hasInput = state.benefit.trim().length > 0;
+  // 색만으로 에러를 알리지 않는다 — 원본의 예외 없는 규칙이다.
+  const benefitError = showErrors && !hasInput ? '필수 입력 항목이에요.' : null;
   const hasResult = state.copyRecommendations.length > 0;
   // 색 판단은 resolveButtonTone 하나가 한다(Step1·하단 CTA와 같은 근거).
   const generateTone = resolveButtonTone(state, 'generate-copy');
@@ -106,16 +109,18 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
     <div className={FORM_STACK}>
       {/* 캠페인 혜택 */}
       <section className={FORM_FIELD}>
-        <div className="flex items-center gap-2">
-          <label htmlFor={benefitId} className={FORM_LABEL}>
-            캠페인 혜택 <span className="text-error">*</span>
-          </label>
-          <InfoTooltip text="혜택, 조건, 기한을 적어주세요 추천 문구가 더 정확해져요" />
-        </div>
-
-        <div>
+        <FormField
+          label="캠페인 혜택"
+          htmlFor={benefitId}
+          required
+          error={benefitError}
+          counter={{ value: state.benefit, limit: BENEFIT_LIMIT }}
+          adornment={
+            <InfoTooltip text="혜택, 조건, 기한을 적어주세요 추천 문구가 더 정확해져요" />
+          }
+        >
           <textarea
-            id={benefitId}
+            {...fieldProps(benefitId, true, benefitError)}
             rows={4}
             maxLength={BENEFIT_LIMIT}
             placeholder={'혜택·조건·기한을 순서대로 적어주세요\n예) 환급 이번달 무료'}
@@ -123,8 +128,7 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
             onChange={(e) => patch({ benefit: e.target.value })}
             className={inputClass(showErrors && !hasInput, 'h-[139px] resize-none py-3')}
           />
-          <CharCounter value={state.benefit} limit={BENEFIT_LIMIT} />
-        </div>
+        </FormField>
 
         <button
           type="button"
@@ -255,8 +259,11 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                       <div key={field} className={FORM_FIELD}>
                         <span className="text-[14px] leading-[22px] text-ink-muted">{label}</span>
                         <div>
+                          {/* 카드가 이미 <label>이라 여기에 또 <label>을 두면 중첩된다.
+                              옆의 글자는 눈으로만 읽히므로 이름은 aria-label로 준다. */}
                           <input
                             type="text"
+                            aria-label={label}
                             value={rec[field]}
                             onChange={(e) => updateRecommendation(index, field, e.target.value)}
                             className={inputClass(false, 'h-12')}
