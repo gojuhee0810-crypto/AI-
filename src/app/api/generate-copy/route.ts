@@ -4,6 +4,12 @@
 import { NextResponse } from 'next/server';
 import { generateCopy } from '@/lib/copy-generate';
 import { isMockMode, mockCopyResponse, mockDelay } from '@/lib/mock-mode';
+import {
+  API_LIMITS,
+  GENERATION_FAILED_MESSAGE,
+  checkOptional,
+  checkRequired,
+} from '@/lib/api-input';
 import type { GenerateCopyRequest, GenerateCopyResponse, GenerateCopyErrorResponse } from '@/types/copy-generation';
 
 function errorResponse(
@@ -24,12 +30,11 @@ export async function POST(request: Request): Promise<NextResponse<GenerateCopyR
 
   const { objectTag, benefit, target } = body;
 
-  if (!objectTag || typeof objectTag !== 'string' || !objectTag.trim()) {
-    return errorResponse('INVALID_INPUT', 'objectTag는 필수입니다.', 400);
-  }
-  if (!benefit || typeof benefit !== 'string' || !benefit.trim()) {
-    return errorResponse('INVALID_INPUT', 'benefit은 필수입니다.', 400);
-  }
+  const invalid =
+    checkRequired('objectTag', objectTag, API_LIMITS.objectTag) ??
+    checkRequired('benefit', benefit, API_LIMITS.benefit) ??
+    checkOptional('target', target, API_LIMITS.target);
+  if (invalid) return errorResponse('INVALID_INPUT', invalid, 400);
 
   // 화면 작업 중에는 같은 화면을 수십 번 돌리게 되는데 카피는 매번 Claude를 부른다.
   // MOCK_AI=1이면 호출 없이 같은 모양의 응답을 돌려준다(src/lib/mock-mode.ts).
@@ -43,8 +48,8 @@ export async function POST(request: Request): Promise<NextResponse<GenerateCopyR
     const result = await generateCopy({ objectTag, benefit, target });
     return NextResponse.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : '알 수 없는 오류';
+    // 원문은 로그에만. 응답에 실으면 상위 URL·조직 ID·키 조각이 브라우저까지 간다.
     console.error('[generate-copy] 생성 실패:', error);
-    return errorResponse('COPY_GENERATION_FAILED', message, 502);
+    return errorResponse('COPY_GENERATION_FAILED', GENERATION_FAILED_MESSAGE, 502);
   }
 }

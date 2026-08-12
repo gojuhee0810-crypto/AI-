@@ -9,15 +9,18 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = process.cwd();
 const GLOBALS = readFileSync(join(ROOT, 'src/app/globals.css'), 'utf8');
-const ORIGIN = readFileSync(
-  join(ROOT, '.claude/skills/adcenter-design-system/2-tokens/tokens.css'),
-  'utf8',
-);
+
+// 원본 시스템은 별도 저장소를 심볼릭 링크로 걸어둔 것이라, 다른 컴퓨터에서 클론하면
+// 링크가 끊긴다. 없는 걸 실패로 만들면 그 환경에서는 스위트 전체가 죽는다 —
+// 대조는 건너뛰고, 링크에 기대지 않는 나머지 검사는 그대로 돈다.
+const ORIGIN_PATH = join(ROOT, '.claude/skills/adcenter-design-system/2-tokens/tokens.css');
+const hasOrigin = existsSync(ORIGIN_PATH);
+const ORIGIN = hasOrigin ? readFileSync(ORIGIN_PATH, 'utf8') : '';
 
 function readToken(css: string, name: string): string | null {
   const m = css.match(new RegExp(`${name}\\s*:\\s*([^;]+);`));
@@ -58,7 +61,7 @@ const TOKEN_PAIRS: Array<[ours: string, origin: string]> = [
   ['--color-accent-soft', '--color-blue50'],
 ];
 
-test('색 토큰이 원본 tokens.css와 같다', () => {
+test('색 토큰이 원본 tokens.css와 같다', { skip: !hasOrigin && '원본 시스템 링크 없음' }, () => {
   for (const [ours, origin] of TOKEN_PAIRS) {
     const mine = readToken(GLOBALS, ours);
     const theirs = readToken(ORIGIN, origin);
@@ -68,7 +71,7 @@ test('색 토큰이 원본 tokens.css와 같다', () => {
   }
 });
 
-test('원본에서 의도적으로 벗어난 토큰은 --color-accent 하나뿐이다', () => {
+test('원본에서 의도적으로 벗어난 토큰은 --color-accent 하나뿐이다', { skip: !hasOrigin && '원본 시스템 링크 없음' }, () => {
   // #008dff는 배지 배경(#e3f3ff) 위에서 2.96, 흰 배경에서도 3.36이라 14px 글자에
   // 필요한 4.5를 못 넘는다. 원본 Badge 스펙 자체가 미달이라 한 단계 진하게 내렸다.
   // 되돌리려면 그 대비 문제를 먼저 해결해야 한다.

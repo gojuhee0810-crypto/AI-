@@ -13,6 +13,12 @@ import { findStyle2LibraryAsset } from '@/lib/style2-asset-library';
 import { generateStyle1Dynamic } from '@/lib/style1-generate';
 import { generateStyle2Dynamic } from '@/lib/style2-generate';
 import { isMockMode, mockDelay, mockImages } from '@/lib/mock-mode';
+import {
+  API_LIMITS,
+  GENERATION_FAILED_MESSAGE,
+  checkOptional,
+  checkRequired,
+} from '@/lib/api-input';
 import type {
   GenerateImageRequest,
   GenerateImageResponse,
@@ -70,9 +76,12 @@ export async function POST(request: Request): Promise<NextResponse<GenerateImage
 
   const { primaryObject, material, brandColor, regenerateStyle, visualizationNote } = body;
 
-  if (!primaryObject || typeof primaryObject !== 'string' || !primaryObject.trim()) {
-    return errorResponse('INVALID_INPUT', 'primaryObject는 필수입니다.', 400);
-  }
+  const invalid =
+    checkRequired('primaryObject', primaryObject, API_LIMITS.objectTag) ??
+    checkOptional('material', material, API_LIMITS.optional) ??
+    checkOptional('brandColor', brandColor, API_LIMITS.optional) ??
+    checkOptional('visualizationNote', visualizationNote, API_LIMITS.optional);
+  if (invalid) return errorResponse('INVALID_INPUT', invalid, 400);
 
   // 재생성(regenerateStyle 지정) 시엔 라이브러리 매칭이었더라도 항상 동적 생성으로 전환한다.
   const isRegenerate = Boolean(regenerateStyle);
@@ -117,18 +126,15 @@ export async function POST(request: Request): Promise<NextResponse<GenerateImage
     if (result.status === 'fulfilled') {
       images.push(result.value);
     } else {
-      const message = result.reason instanceof Error ? result.reason.message : '알 수 없는 오류';
+      // 원문은 로그에만 남긴다 — 응답에 실으면 상위 URL·조직 ID·키 조각이
+      // 브라우저까지 가고, 이 문구는 화면에 그대로 노출된다.
       console.error(`[generate-image] ${style} 생성 실패:`, result.reason);
-      partialErrors.push({ style, message });
+      partialErrors.push({ style, message: GENERATION_FAILED_MESSAGE });
     }
   });
 
   if (images.length === 0) {
-    return errorResponse(
-      'IMAGE_GENERATION_FAILED',
-      partialErrors.map((e) => `${e.style}: ${e.message}`).join(' / ') || '이미지 생성 중 알 수 없는 오류가 발생했습니다.',
-      502,
-    );
+    return errorResponse('IMAGE_GENERATION_FAILED', GENERATION_FAILED_MESSAGE, 502);
   }
 
   const response: GenerateImageResponse = {
