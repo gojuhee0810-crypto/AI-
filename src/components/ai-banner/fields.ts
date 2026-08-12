@@ -77,19 +77,8 @@ export function inputClass(hasError: boolean, extra = ''): string {
  */
 export const FORM_LABEL = `block ${TEXT.title18Bold} text-ink`;
 
-/**
- * 폼 항목끼리 — 10.
- *
- * 작아 보이지만 헬퍼 줄이 항목 안에 들어 있어서 그렇다. Figma 12:115106에서
- * **입력칸 바닥 → 다음 라벨은 항상 35**이고, 그중 25(space/6 + 카운터 19)를
- * 헬퍼가 차지하고 남는 10이 항목 사이 간격이다.
- *
- *   입력칸 ─6─ 헬퍼(19) ─10─ 다음 라벨      = 35
- *
- * 그래서 헬퍼 줄은 비어 있어도 자리를 지켜야 한다(FormField가 그렇게 한다).
- * 없애면 그 항목만 25px 위로 붙고, 에러가 뜰 때 아래가 밀린다.
- */
-export const FORM_STACK = 'flex flex-col gap-[10px]';
+/** 폼 항목끼리 — space/50 */
+export const FORM_STACK = 'flex flex-col gap-[50px]';
 
 /** 라벨(+설명) → 컨트롤 — space/15 */
 export const FORM_FIELD = 'flex flex-col gap-[15px]';

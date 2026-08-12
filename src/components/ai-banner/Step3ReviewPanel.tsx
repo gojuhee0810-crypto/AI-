@@ -16,8 +16,9 @@ import { useId, useState } from 'react';
 import { IconPenHorizlineLine } from '@karrotmarket/react-monochrome-icon';
 import { EditDialog } from '@/components/ai-banner/EditDialog';
 import { TEXT_BUTTON } from '@/components/ai-banner/buttons';
-import { FORM_FIELD, FORM_HELPER, FORM_LABEL, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
+import { FORM_FIELD, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
 import { CharCount, CharCounter } from '@/components/ai-banner/CharCounter';
+import { FormField, fieldProps } from '@/components/ai-banner/FormField';
 import { Radio } from '@/components/ai-banner/Radio';
 import {
   IMAGE_STYLE_LABEL,
@@ -40,15 +41,6 @@ interface Props {
   patch: (next: Partial<AiBannerFlowState>) => void;
   /** 등록을 시도했는데 못 넘어간 상태 — 빈 필수 칸을 붉게 표시한다. */
   showErrors: boolean;
-}
-
-/** 입력 라벨 — 1·2단계와 같은 18/28 Medium */
-function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor: string }) {
-  return (
-    <label htmlFor={htmlFor} className={FORM_LABEL}>
-      {children}
-    </label>
-  );
 }
 
 // 입력칸 스타일을 여기 또 적어두지 않는다. 한때 INPUT_CLASS라는 사본이 있었고,
@@ -268,67 +260,51 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
       </section>
 
       {/* 안내 문구 — 배너 하단에 함께 노출된다. 미리보기에 바로 반영된다. */}
-      <section className={FORM_FIELD}>
-        <FieldLabel htmlFor={noticeId}>안내 문구</FieldLabel>
-        <div>
-          <textarea
-            id={noticeId}
-            rows={2}
-            maxLength={NOTICE_TEXT_LIMIT}
-            placeholder="심의필 등 안내 문구가 필요할 경우 입력해주세요"
-            value={state.noticeText}
-            onChange={(e) => patch({ noticeText: e.target.value })}
-            className={inputClass(false, "h-[76px] resize-none py-3")}
-          />
-          <CharCounter value={state.noticeText} limit={NOTICE_TEXT_LIMIT} />
-        </div>
-      </section>
+      <FormField
+        label="안내 문구"
+        htmlFor={noticeId}
+        counter={{ value: state.noticeText, limit: NOTICE_TEXT_LIMIT }}
+      >
+        <textarea
+          {...fieldProps(noticeId, false)}
+          rows={2}
+          maxLength={NOTICE_TEXT_LIMIT}
+          placeholder="심의필 등 안내 문구가 필요할 경우 입력해주세요"
+          value={state.noticeText}
+          onChange={(e) => patch({ noticeText: e.target.value })}
+          className={inputClass(false, 'h-[76px] resize-none py-3')}
+        />
+      </FormField>
 
       {/* 랜딩 URL — 등록 필수값 */}
-      <section className={FORM_FIELD}>
-        <FieldLabel htmlFor={landingId}>
-          랜딩URL <span className="text-error">*</span>
-        </FieldLabel>
-        <div>
-          <input
-            id={landingId}
-            type="url"
-            inputMode="url"
-            placeholder="https:// 형식의 랜딩 URL을 입력해주세요"
-            value={state.landingUrl}
-            aria-invalid={urlError !== null || undefined}
-            aria-describedby={urlError ? `${landingId}-error` : undefined}
-            onChange={(e) => patch({ landingUrl: e.target.value })}
-            className={inputClass(urlError !== null, 'h-12')}
-          />
-          {urlError && (
-            <p
-              id={`${landingId}-error`}
-              role="alert"
-              className={`${FORM_HELPER} text-error`}
-            >
-              {urlError}
-            </p>
-          )}
-        </div>
-      </section>
+      <FormField label="랜딩URL" htmlFor={landingId} required error={urlError}>
+        <input
+          {...fieldProps(landingId, true, urlError)}
+          type="url"
+          inputMode="url"
+          placeholder="https:// 형식의 랜딩 URL을 입력해주세요"
+          value={state.landingUrl}
+          onChange={(e) => patch({ landingUrl: e.target.value })}
+          className={inputClass(urlError !== null, 'h-12')}
+        />
+      </FormField>
 
       {/* 심사 참고사항 — 심사 담당자에게만 전달되고 배너에는 안 나온다 */}
-      <section className={FORM_FIELD}>
-        <FieldLabel htmlFor={reviewNoteId}>심사 참고사항</FieldLabel>
-        <div>
-          <textarea
-            id={reviewNoteId}
-            rows={6}
-            maxLength={REVIEW_NOTE_LIMIT}
-            placeholder="소재 심사 담당자에게 전달할 의견이 있는 경우 입력해주세요"
-            value={state.reviewNote}
-            onChange={(e) => patch({ reviewNote: e.target.value })}
-            className={inputClass(false, "h-[180px] resize-none py-3")}
-          />
-          <CharCounter value={state.reviewNote} limit={REVIEW_NOTE_LIMIT} />
-        </div>
-      </section>
+      <FormField
+        label="심사 참고사항"
+        htmlFor={reviewNoteId}
+        counter={{ value: state.reviewNote, limit: REVIEW_NOTE_LIMIT }}
+      >
+        <textarea
+          {...fieldProps(reviewNoteId, false)}
+          rows={6}
+          maxLength={REVIEW_NOTE_LIMIT}
+          placeholder="소재 심사 담당자에게 전달할 의견이 있는 경우 입력해주세요"
+          value={state.reviewNote}
+          onChange={(e) => patch({ reviewNote: e.target.value })}
+          className={inputClass(false, 'h-[180px] resize-none py-3')}
+        />
+      </FormField>
 
       <p className="flex items-start gap-2 text-[14px] leading-[22px] text-pretty text-ink-muted">
         <span aria-hidden className="pt-2 text-[6px] leading-none">
@@ -347,14 +323,17 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
         onClose={() => setEditing(null)}
         onSave={saveEdit}
       >
+        {/* 모달 제목이 "소재 이름 변경"이라 보이는 라벨은 중복이다. 그래도 이름은
+            있어야 해서 aria-label로 준다 — 없으면 스크린리더가 "편집 텍스트"로만 읽는다. */}
         <input
           type="text"
           autoFocus
+          aria-label="소재 이름"
           maxLength={MATERIAL_NAME_LIMIT}
           placeholder="소재 이름을 입력해주세요"
           value={draftName}
           onChange={(e) => setDraftName(e.target.value)}
-          className={inputClass(false, "h-12")}
+          className={inputClass(false, 'h-12')}
         />
         <CharCounter value={draftName} limit={MATERIAL_NAME_LIMIT} />
       </EditDialog>
