@@ -26,8 +26,10 @@ export function ProgressStatus({
 }) {
   const [index, setIndex] = useState(0);
 
+  // 여기서 setIndex(0)로 되감지 않는다. 이 컴포넌트는 생성이 시작될 때 새로
+  // 붙고 끝나면 사라지므로 마운트 시점에 이미 0이고, messages는 모듈 상수라
+  // 붙어 있는 동안 바뀌지 않는다. 되감기가 필요한 호출자가 생기면 key를 주면 된다.
   useEffect(() => {
-    setIndex(0);
     if (messages.length <= 1) return;
     const timer = setInterval(() => {
       setIndex((i) => (i < messages.length - 1 ? i + 1 : i));

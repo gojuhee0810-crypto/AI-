@@ -47,9 +47,15 @@ export default function AiBannerStudioPage() {
   const materialNameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // set-state-in-effect를 끈다. 규칙이 막으려는 건 렌더가 연쇄로 도는 것인데,
+    // 여기서는 마운트 직후 딱 한 번 도는 게 목적이다. sessionStorage는 서버에
+    // 없으므로 첫 렌더를 저장값으로 채우면 서버 결과와 달라져 하이드레이션이
+    // 깨진다. 빈 상태로 한 번 그리고 곧바로 복원하는 것 말고 방법이 없다.
+    /* eslint-disable react-hooks/set-state-in-effect */
     const restored = loadFlowState();
     if (restored) setState(restored);
     setIsHydrated(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   useEffect(() => {

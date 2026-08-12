@@ -25,7 +25,7 @@ import { AlertDialog } from '@/components/ai-banner/AlertDialog';
 import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
 import { CharCounter } from '@/components/ai-banner/CharCounter';
 import { aiGenerateButtonClass } from '@/components/ai-banner/buttons';
-import { FORM_FIELD, FORM_HELPER, FORM_LABEL, FORM_OPTIONS, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
+import { FORM_FIELD, FORM_LABEL, FORM_OPTIONS, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { Radio } from '@/components/ai-banner/Radio';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';

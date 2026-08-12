@@ -21,7 +21,7 @@ import {
   type AiBannerFlowState,
 } from '@/types/banner-flow';
 import { TEXT_BUTTON, aiGenerateButtonClass } from '@/components/ai-banner/buttons';
-import { FORM_FIELD, FORM_HELPER, FORM_LABEL, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
+import { FORM_FIELD, FORM_LABEL, FORM_STACK, inputClass } from '@/components/ai-banner/fields';
 import { ProgressStatus, Shimmer } from '@/components/ai-banner/GenerativeLoading';
 import { InfoTooltip } from '@/components/ai-banner/InfoTooltip';
 import { CharCounter } from '@/components/ai-banner/CharCounter';
