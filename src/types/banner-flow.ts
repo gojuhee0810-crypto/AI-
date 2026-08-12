@@ -3,7 +3,7 @@
 // src/lib에서 이 타입을 써야 하는데, lib이 app을 import하는 건 방향이 거꾸로다.
 
 import type { GeneratedImage, ImageStyleKey } from '@/types/image-generation';
-import type { CopyRecommendation } from '@/types/copy-generation';
+import type { CopyPattern, CopyRecommendation } from '@/types/copy-generation';
 
 /** 이미지를 AI로 그릴지(그래픽 아이콘), 실제 상품 사진을 올릴지(제품 이미지). */
 export type ImageSourceType = 'graphic' | 'product';
@@ -25,6 +25,22 @@ export const IMAGE_TYPE_LABEL: Record<ImageSourceType, string> = {
 export const IMAGE_STYLE_LABEL: Record<ImageStyleKey, string> = {
   'style-1-3d-basic': '3D 아이콘',
   'style-2-2d-flat': '2D 아이콘',
+};
+
+/**
+ * 카피 패턴의 화면 이름.
+ *
+ * 내부 이름(`상황기반+문제제기`)은 카피 생성 규칙의 분류 코드다. `+`로 이어 붙인
+ * 조어라 사람이 쓰는 말이 아니고, 셋을 나란히 놓아도 무엇이 다른지 안 보인다.
+ * 고르는 자리에 필요한 건 "이 카피가 읽는 사람에게 무엇을 하는가"다.
+ *
+ * 내부 이름은 API 응답이자 테스트가 쓰는 값이라 그대로 둔다 — 표시용만 여기 둔다.
+ */
+export const COPY_PATTERN_LABEL: Record<CopyPattern, string> = {
+  '상황기반+문제제기': '공감형',
+  '혜택조건+결과형': '조건 안내형',
+  '혜택+CTA형': '행동 유도형',
+  '조건+혜택강조형': '혜택 강조형',
 };
 
 /**

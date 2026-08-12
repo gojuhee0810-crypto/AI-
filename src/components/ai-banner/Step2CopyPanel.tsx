@@ -13,7 +13,9 @@
 // 누르라는 신호를 붙이게 된다.
 
 import { useId, useState } from 'react';
+import { IconPenHorizlineLine } from '@karrotmarket/react-monochrome-icon';
 import {
+  COPY_PATTERN_LABEL,
   MAINTITLE_LIMIT,
   SUBTITLE_LIMIT,
   resolveButtonTone,
@@ -213,7 +215,7 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                         누르라는 신호를 붙이게 된다. 굵기와 색 농도로 가른다 —
                         새 색을 만들지 않고 이미 있는 토큰만 쓴다. */}
                     <span className="text-[16px] leading-[26px] font-medium text-ink">
-                      {rec.pattern}
+                      {COPY_PATTERN_LABEL[rec.pattern]}
                     </span>
                   </span>
                   {/* 고른 카피만 고칠 수 있다. 셋 다 수정 버튼을 달아두면 안 고를
@@ -228,6 +230,10 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                       }}
                       className={TEXT_BUTTON}
                     >
+                      {/* 3단계 소재 정보 행과 같은 연필이다. 거기선 줄 전체가
+                          버튼이라 아이콘만 두고, 여기선 이 버튼이 컨트롤이라
+                          글자까지 붙인다 — 그림은 같고 무게만 다르다. */}
+                      <IconPenHorizlineLine aria-hidden className="size-5 shrink-0" />
                       {isEditing ? '완료' : '수정'}
                     </button>
                   )}

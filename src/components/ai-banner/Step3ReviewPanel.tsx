@@ -21,6 +21,7 @@ import { CharCount, CharCounter } from '@/components/ai-banner/CharCounter';
 import { FormField, fieldProps } from '@/components/ai-banner/FormField';
 import { Radio } from '@/components/ai-banner/Radio';
 import {
+  COPY_PATTERN_LABEL,
   IMAGE_STYLE_LABEL,
   IMAGE_TYPE_LABEL,
   MAINTITLE_LIMIT,
@@ -370,7 +371,7 @@ export function Step3ReviewPanel({ state, patch, showErrors }: Props) {
                       누를 수 없는 패턴명에 쓰면 누르라는 신호를 붙이게 된다.
                       2단계 카드에서 먼저 고쳤는데 이 모달만 안 따라와 있었다. */}
                   <span className="text-[14px] leading-[22px] font-medium text-ink">
-                    {rec.pattern}
+                    {COPY_PATTERN_LABEL[rec.pattern]}
                   </span>
                   {/* 고른 안만 글자를 고칠 수 있다. 안 쓸 카피를 다듬는 데
                       시간을 쓰게 만들 이유가 없다. */}
