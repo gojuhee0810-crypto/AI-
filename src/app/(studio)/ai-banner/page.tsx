@@ -116,13 +116,17 @@ export default function AiBannerStudioPage() {
           1728 창에서 미리보기가 796px까지 부풀어 설계(523)와 딴판이 됐다.
           넓은 화면에서는 오른쪽을 비우는 편이 낫다. */}
       <div className="flex min-h-full w-full max-w-[1190px] flex-col">
-        <div className="px-12 pt-8">
+        {/* 헤더 세로 간격은 Figma 12:115106 실측이다(1440 소재 만들기).
+            GNB 84 → 타이틀 124(40) → 45 → 배지 줄 219(50) → 28 → 소재 이름 287(40)
+            → 28 → 15 → 인풋 73 → 구분선 443(40)
+            눈으로 맞추다 16/24/24로 좁혀놨었고, 그래서 붙어 보였다. */}
+        <div className="px-12 pt-10">
           <h1 className="text-[32px] leading-[45px] font-medium tracking-[-0.4px] text-ink">
             AI 광고 소재 만들기
           </h1>
 
           {/* 앞 단계에서 정해져 넘어온 캠페인·광고그룹 — 지금은 표시 전용 */}
-          <div className="mt-4 flex items-center gap-10">
+          <div className="mt-[50px] flex items-center gap-10">
             {[
               { badge: '캠페인', name: '일이삼사오육칠팔구십일이삼사오육칠팔구십' },
               { badge: '광고그룹', name: '일이삼사오육칠팔구십일이삼사오육칠팔구십' },
@@ -139,7 +143,7 @@ export default function AiBannerStudioPage() {
               카피·최종 단계에는 없고 1단계에서만 노출된다.
               폭은 아래 폼 칸과 같은 523px(광고센터 기존 소재 폼 실측). */}
           {state.step === 1 && (
-            <div className="mt-6 w-[523px] max-w-full">
+            <div className="mt-10 w-[523px] max-w-full">
               <label
                 htmlFor="materialName"
                 className={FORM_LABEL}
@@ -176,7 +180,7 @@ export default function AiBannerStudioPage() {
         {/* 구분선은 타이틀·라벨과 같은 지점(좌우 패딩 48)에서 시작한다.
             화면 왼쪽 끝까지 물리면 페이지를 가로로 자르는 선처럼 보여,
             위아래가 같은 폼이라는 게 안 읽힌다. */}
-        <div className="mx-12 mt-6 border-t border-line" />
+        <div className="mx-12 mt-10 border-t border-line" />
 
         {/* 본문: 좌 폼 / 우 미리보기 — 미리보기 우측 배치는 확정 요구사항.
             미리보기는 스크롤을 따라오도록 헤더 아래에 붙인다. */}

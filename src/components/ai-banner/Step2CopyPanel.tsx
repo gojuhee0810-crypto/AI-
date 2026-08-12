@@ -187,8 +187,12 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                 <label
                   key={rec.pattern}
                   // 선택 표시는 라디오 하나로만. 테두리 색까지 바뀌면 인풋 포커스와
-                  // 뒤섞여 오히려 흐려진다. 호버는 연한 회색 배경만.
-                  className="flex cursor-pointer flex-col gap-4 py-5 transition-colors duration-150 hover:bg-sidebar"
+                  // 뒤섞여 오히려 흐려진다.
+                  //
+                  // 호버는 검정 3%를 덧씌운다(원본 --state-hover). 회색 배경을
+                  // 새로 칠하던 방식은 카피 면과 같은 계열이라 마우스를 올리면
+                  // 면이 사라져 보였다.
+                  className="flex cursor-pointer flex-col gap-4 py-5 transition-colors duration-150 hover:bg-ink/[0.03]"
                 >
                 <input
                   type="radio"
@@ -264,12 +268,13 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                   // 회색으로 가르고 테두리를 안 쓴다 — 카드 테두리 + 항목 구분선까지
                   // 같은 #cfd6dc가 세 겹이 되면 어느 선이 무엇을 나누는지 흐려진다.
                   //
-                  // sunken(grey50)이 아니라 fill(grey100)인 건 호버 배경이 sidebar와
-                  // 같은 grey50이라, 마우스를 올리면 면이 사라져 보이기 때문이다.
+                  // 면은 sunken(grey50)이다. fill(grey100)은 background/support —
+                  // 버튼 배경 토큰이라, 회색 상태의 AI 생성 버튼과 같은 회색이 됐다.
+                  // 콘텐츠가 놓이는 면과 누르는 것의 면은 계열이 달라야 한다.
                   //
                   // 크기는 타입 스케일(§4)에서 고른다. 18/24는 실제 배너보다 커서
                   // 카드가 문서처럼 읽혔다.
-                  <div className="ml-8 rounded-lg bg-fill px-4 py-3">
+                  <div className="ml-8 rounded-lg bg-sidebar px-4 py-3">
                     <p className="text-[14px] leading-[22px] font-medium text-ink-muted">
                       {rec.subtitle}
                     </p>
