@@ -11,7 +11,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'fs/promises';
 import path from 'path';
-import { slugifyObject, resolveObjectBlueprint, compilePrompt } from './prompt-compiler';
+import {
+  slugifyObject,
+  resolveObjectBlueprint,
+  compilePrompt,
+  parseBlueprint,
+  objectDetailForStyle1,
+} from './prompt-compiler';
 
 const PROMPT_SYSTEM_DIR = path.join(process.cwd(), 'prompt-system');
 
@@ -116,4 +122,59 @@ test('폴백 프롬프트는 문서 순서대로 이어붙인다 — 블루프�
   const blueprintAt = prompt.indexOf(marker);
   assert.ok(blueprintAt > 0, '블루프린트가 맨 앞이면 스타일 규칙이 빠진 것이다');
   assert.ok(prompt.indexOf('---') < blueprintAt, '문서 구분자가 있어야 한다');
+});
+
+// ── parseBlueprint / objectDetailForStyle1 ───────────────────────────
+//
+// 2026-08-13에 추가. 스타일 1이 오브젝트 이름만 받고 있었다 — "전기자전거"를 넣었더니
+// 배터리 없는 평범한 자전거가 나왔는데, 블루프린트에는 배터리가 정확히 적혀 있었다.
+// 실제 API를 처음 돌려보고서야 알았다.
+
+test('블루프린트를 섹션 맵으로 나눈다', () => {
+  const s = parseBlueprint('# T\n\n## OBJECT\nBike\n\n## AVOID\nspokes, chains');
+  assert.equal(s.OBJECT, 'Bike');
+  assert.equal(s.AVOID, 'spokes, chains');
+});
+
+test('여러 줄짜리 섹션도 통째로 담는다', () => {
+  const s = parseBlueprint('## CONSTRUCTION\n첫 줄\n둘째 줄\n\n## AVOID\nx');
+  assert.equal(s.CONSTRUCTION, '첫 줄\n둘째 줄');
+});
+
+test('공백 섹션과 제목만 있는 섹션은 버린다 — 빈 지시가 프롬프트에 들어가지 않게', () => {
+  const s = parseBlueprint('## OPTIONAL DETAILS\n\n## AVOID\nx');
+  assert.ok(!('OPTIONAL DETAILS' in s));
+  assert.equal(s.AVOID, 'x');
+});
+
+test('회귀: 실제 블루프린트에서 인식 단서를 뽑는다 (전기자전거의 배터리)', async () => {
+  const blueprint = await readFile(path.join(PROMPT_SYSTEM_DIR, 'OBJECTS', '전기자전거.md'), 'utf-8');
+  const detail = objectDetailForStyle1(blueprint);
+  assert.match(detail, /battery pack/i, '배터리가 스타일 1 프롬프트에 안 들어간다');
+  assert.match(detail, /must be clearly visible/i, '인식 단서를 강조하는 문장이 없다');
+});
+
+test('색·비율·카메라는 가져오지 않는다 — 스타일 1은 자기 규칙이 있다', async () => {
+  const blueprint = await readFile(path.join(PROMPT_SYSTEM_DIR, 'OBJECTS', '전기자전거.md'), 'utf-8');
+  const detail = objectDetailForStyle1(blueprint);
+  const sections = parseBlueprint(blueprint);
+  assert.ok(!detail.includes(sections.CATEGORY), 'CATEGORY(2D용 팔레트)가 섞였다');
+  assert.ok(!detail.includes(sections.PROPORTION), 'PROPORTION이 섞였다');
+  assert.ok(!detail.includes(sections.PURPOSE), 'PURPOSE(시각 정보 아님)가 섞였다');
+});
+
+test('AVOID는 금지 문장으로 옮긴다', () => {
+  const detail = objectDetailForStyle1('## AVOID\nrealistic spokes, brand logos');
+  assert.match(detail, /Do not include: realistic spokes, brand logos/);
+});
+
+test('섹션이 하나도 없으면 빈 문자열 — 빈 줄만 프롬프트에 넣지 않는다', () => {
+  assert.equal(objectDetailForStyle1('# 제목만 있는 문서'), '');
+});
+
+test('폴백 블루프린트에서도 설명이 나온다 — Claude가 죽어도 이름만 넘어가지 않게', async () => {
+  const blueprint = await withoutClaudeKey(() => resolveObjectBlueprint('폴백설명검사용'));
+  const detail = objectDetailForStyle1(blueprint);
+  assert.ok(detail.length > 0, '폴백일 때 스타일 1이 이름만 받게 된다');
+  assert.match(detail, /폴백설명검사용/);
 });

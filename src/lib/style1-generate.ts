@@ -5,13 +5,21 @@
 import { GoogleGenAI } from '@google/genai';
 import { removeBackground } from '@imgly/background-removal-node';
 import { buildStylePrompts } from './image-style-patterns';
+import { resolveObjectBlueprint, objectDetailForStyle1 } from './prompt-compiler';
 import { toBannerPng, type BannerImage } from './banner-image';
 
 export type Style1GenerateResult = BannerImage;
 
 /** primaryObject를 스타일 1(3D) 이미지로 동적 생성하고 240×240 PNG 버퍼로 반환한다. */
 export async function generateStyle1Dynamic(primaryObject: string): Promise<Style1GenerateResult> {
-  const [{ prompt }] = buildStylePrompts({ primaryObject, onlyStyle: 'style-1-3d-basic' });
+  // 스타일 2만 쓰던 블루프린트를 여기서도 받는다(2026-08-13). 전에는 오브젝트 이름만
+  // 넘겨서, "전기자전거"를 넣어도 배터리 없는 평범한 자전거가 나왔다.
+  const blueprint = await resolveObjectBlueprint(primaryObject);
+  const [{ prompt }] = buildStylePrompts({
+    primaryObject,
+    objectDetail: objectDetailForStyle1(blueprint),
+    onlyStyle: 'style-1-3d-basic',
+  });
 
   const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const response = await client.models.generateContent({

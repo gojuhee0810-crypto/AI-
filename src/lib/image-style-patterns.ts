@@ -28,12 +28,12 @@ function colorInstruction(): string {
 // 스타일 1: object별로 바뀌는 부분(Subject, Geometry)과 고정인 부분(Icon Style, Material,
 // Lighting, Camera)을 분리. object는 단일 명사("umbrella")뿐 아니라 수식어가 붙은
 // 구("a broken car")도 그대로 들어갈 수 있다.
-function style1Basic3d(object: string): string {
+function style1Basic3d(object: string, objectDetail?: string): string {
   return `A premium 3D icon, presented as a single, unified 3D object that represents ${object}. This object abstracts the essence of its subject into a cohesive volumetric form. Depict at most two objects total (a primary object plus at most one small secondary/accent object) — never combine three or more separate, distinct objects into the same icon.
 The icon style is a modern 3D icon, with cohesive volumetric 3D, friendly proportions, a simple silhouette, consistent volumetric form, high visual weight, and a single, integrated construction without external background elements, all with slightly rounded edges and minimal industrial design.
 ${colorInstruction()}
 The geometry is a single, prominent, rounded, and organically shaped 3D mass that abstracts the core elements of ${object} into one continuous, simplified form. Its shape should be clearly recognizable as ${object}, with implied details seamlessly integrated into the solid, rounded form, not as intricate or sharp elements. Every feature normally expected when recognizing this specific object — whether functional (e.g. wheels on a vehicle, a handle on a tool) or purely iconic/decorative (e.g. eyes, ears, or a nose on an animal-shaped object) — must be present and keep its real-world silhouette, position, and proportion so it reads correctly, even while staying simplified and rounded. Do not omit small but expected details just because they are non-functional. All elements have soft edges, continuous curvature, and large corner radii.
-${materialClay()}
+${objectDetail ? objectDetail + '\n' : ''}${materialClay()}
 Lighting is a large soft studio light with a top-left key light and ambient fill, creating no contact shadow, consistent with premium product rendering.
 Camera view is front-three-quarter, 15° perspective, slight top angle, centered, orthographic-like, focusing tightly on the object.`;
 }
@@ -64,6 +64,12 @@ Centered composition, isolated on a plain background.`;
 
 export interface BuildStylePromptsInput {
   primaryObject: string;
+  /**
+   * 블루프린트에서 뽑은 오브젝트 모양 설명(`objectDetailForStyle1`). 스타일 1에만
+   * 들어간다 — 없으면 오브젝트 "이름"만 가지고 그리게 되어, 이름에 담긴 특징
+   * (전기자전거의 배터리 같은 것)이 그림에서 빠진다.
+   */
+  objectDetail?: string;
   /** 지정 시 해당 스타일 1장만 프롬프트를 만든다. 없으면 스타일 1+2 둘 다 */
   onlyStyle?: ImageStyleKey;
 }
@@ -77,11 +83,15 @@ export interface StylePrompt {
  * 오브젝트 정보로 스타일별 최종 프롬프트(스타일 프롬프트 + 베이스 프롬프트)를 조립한다.
  * onlyStyle이 지정되면 그 스타일 1장만 반환한다.
  */
-export function buildStylePrompts({ primaryObject, onlyStyle }: BuildStylePromptsInput): StylePrompt[] {
+export function buildStylePrompts({
+  primaryObject,
+  objectDetail,
+  onlyStyle,
+}: BuildStylePromptsInput): StylePrompt[] {
   const all: StylePrompt[] = [
     {
       style: 'style-1-3d-basic',
-      prompt: `${style1Basic3d(primaryObject)}\n${BASE_PROMPT}`,
+      prompt: `${style1Basic3d(primaryObject, objectDetail)}\n${BASE_PROMPT}`,
     },
     {
       style: 'style-2-2d-flat',

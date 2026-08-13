@@ -17,7 +17,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { aiGenerateButtonClass, TONE_CLASS } from './buttons';
-import type { ButtonTone } from './buttons';
+import type { ButtonTone } from '@/types/banner-flow';
 
 const TONES: ButtonTone[] = ['brand', 'support', 'disabled'];
 

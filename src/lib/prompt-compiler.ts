@@ -17,6 +17,48 @@ export function slugifyObject(input: string): string {
   return input.trim().replace(/\s+/g, '-').replace(/[/\\?%*:|"<>]/g, '');
 }
 
+/** 블루프린트 마크다운을 `## 섹션명` → 내용 맵으로 나눈다. */
+export function parseBlueprint(markdown: string): Record<string, string> {
+  const sections: Record<string, string> = {};
+  for (const part of markdown.split(/^## /m).slice(1)) {
+    const lineBreak = part.indexOf('\n');
+    if (lineBreak < 0) continue;
+    const name = part.slice(0, lineBreak).trim();
+    const body = part.slice(lineBreak + 1).trim();
+    if (name && body) sections[name] = body;
+  }
+  return sections;
+}
+
+/**
+ * 스타일 1(3D)에 넣을 오브젝트 설명. 블루프린트에서 **모양에 관한 것만** 뽑는다.
+ *
+ * 색·비율·카메라는 가져오지 않는다 — 스타일 1은 자기 팔레트와 카메라 규칙을 갖고
+ * 있고(image-style-patterns.ts), 블루프린트의 CATEGORY 색은 스타일 2(2D)용이다.
+ * 둘을 섞으면 3D 아이콘이 2D 팔레트로 칠해진다.
+ *
+ * 2026-08-13에 추가했다. 그전까지 스타일 1은 오브젝트 **이름만** 받았다 —
+ * "전기자전거"를 넣었더니 배터리도 모터도 없는 평범한 자전거가 나왔는데,
+ * 블루프린트에는 `RECOGNITION CUE: Visible battery pack integrated into the
+ * frame's downtube`가 정확히 적혀 있었다. 만들어놓고 스타일 2에게만 주고 있었다.
+ */
+export function objectDetailForStyle1(blueprint: string): string {
+  const s = parseBlueprint(blueprint);
+  const lines: string[] = [];
+
+  if (s.CONSTRUCTION) lines.push(`It is built like this: ${s.CONSTRUCTION}`);
+  if (s.SILHOUETTE) lines.push(`Its silhouette reads as: ${s.SILHOUETTE}`);
+  if (s['RECOGNITION CUE']) {
+    // 하나만 남길 수 있다면 이것 — 빠지면 다른 사물로 읽힌다.
+    lines.push(
+      `The single detail that makes it recognizable, which must be clearly visible: ${s['RECOGNITION CUE']}`,
+    );
+  }
+  if (s.AVOID) lines.push(`Do not include: ${s.AVOID}`);
+
+  return lines.join('\n');
+}
+
 async function readObjectBlueprint(slug: string): Promise<string | null> {
   try {
     return await readFile(path.join(PROMPT_SYSTEM_DIR, 'OBJECTS', `${slug}.md`), 'utf-8');
@@ -26,15 +68,38 @@ async function readObjectBlueprint(slug: string): Promise<string | null> {
 }
 
 /**
- * OBJECTS/{slug}.md가 없으면 Claude에게 image-research-agent와 동일한 절차로
- * 오브젝트 블루프린트를 새로 작성시키고 저장한다. 실패하면(예: 크레딧 부족) 최소
- * 블루프린트로 폴백한다 — 완전히 실패시키지 않고 낮은 품질로라도 진행한다.
+ * 같은 오브젝트를 동시에 요청했을 때 Claude를 한 번만 부르게 막는다.
+ *
+ * 스타일 1과 2가 `Promise.allSettled`로 **함께** 출발하므로, 캐시가 없는 오브젝트는
+ * 두 요청이 같은 순간에 파일이 없는 걸 확인한다. 막지 않으면 Claude를 두 번 부르고
+ * 같은 파일에 두 번 쓴다 — 값이 크게 다르진 않지만 비용이 두 배고, 두 스타일이 서로
+ * 다른 블루프린트를 받아 한 화면에 다른 사물이 나올 수 있다.
+ */
+const inFlight = new Map<string, Promise<string>>();
+
+/**
+ * OBJECTS/{slug}.md가 없으면 Claude에게 오브젝트 블루프린트를 새로 작성시키고
+ * 저장한다. 실패하면(예: 크레딧 부족) 최소 블루프린트로 폴백한다 — 완전히
+ * 실패시키지 않고 낮은 품질로라도 진행한다.
  */
 export async function resolveObjectBlueprint(primaryObject: string): Promise<string> {
   const slug = slugifyObject(primaryObject);
   const existing = await readObjectBlueprint(slug);
   if (existing) return existing;
 
+  const running = inFlight.get(slug);
+  if (running) return running;
+
+  const started = createObjectBlueprint(primaryObject, slug);
+  inFlight.set(slug, started);
+  try {
+    return await started;
+  } finally {
+    inFlight.delete(slug);
+  }
+}
+
+async function createObjectBlueprint(primaryObject: string, slug: string): Promise<string> {
   try {
     const colorTokenDoc = await readDoc('COLOR_TOKEN.md');
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -67,7 +132,7 @@ export async function resolveObjectBlueprint(primaryObject: string): Promise<str
     // Claude 호출 실패(예: 크레딧 부족) — 최소 블루프린트로 폴백해서 파이프라인을 막지 않는다.
     console.error('[prompt-compiler] 블루프린트 생성 실패, 폴백 사용:', error);
     return `# Object Blueprint: ${primaryObject}\n\n## OBJECT\n${primaryObject}\n\n## CATEGORY\nFinance (Primary Blue · Secondary Yellow · Accent Gray)\n\n## PURPOSE\nInstantly communicate "${primaryObject}" at small icon sizes.\n\n## CONSTRUCTION\nA simple recognizable rounded shape representing ${primaryObject}.\n\n## SILHOUETTE\nA single clear, bold silhouette.\n\n## PROPORTION\nMain shape ~70%. Functional parts ~20%. Accent mark ~10%.\n\n## RECOGNITION CUE\nThe overall silhouette of ${primaryObject}.\n\n## AVOID\nrealistic textures, brand logos.`;
-  }
+}
 }
 
 /** 결정적 조립 폴백 — Claude 없이 MD 섹션을 그대로 이어붙인다. */
