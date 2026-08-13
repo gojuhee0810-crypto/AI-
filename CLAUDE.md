@@ -40,8 +40,9 @@ AI 배너 스튜디오는 이러한 제작 과정을 이미지 생성부터 카�
 
 | 무엇 | 어디 |
 |---|---|
-| 화면 설계 (3단계 구조, 확정 제약, 상태 표현 규칙) | `docs/02-design/features/banner-studio-ui.design.md` |
-| 이미지 생성 설계 | `docs/02-design/features/image-generation.design.md` |
+| **무엇을 만드나** (흐름·단계별 입력·매체 규격·범위) | `docs/01-plan/features/banner-studio-ui.plan.md` |
+| **어떻게 보이나** (배치·상태 표현·폼 구조·미리보기) | `docs/02-design/features/banner-studio-ui.design.md` |
+| 이미지 생성 계획 / 설계 | `docs/01-plan/features/image-generation.plan.md` · `docs/02-design/features/image-generation.design.md` |
 | 카피 작성 규칙 | `docs/patterns/copy-patterns-v2.md` |
 | 매체 규격 (메인 14자 / 서브 15자 / 240×240 PNG) | `docs/guides/kakaopay-banner-guide.md` |
 | **디자인 시스템 (컴포넌트 28종·토큰·접근성)** | **`.claude/skills/adcenter-design-system/`** |
