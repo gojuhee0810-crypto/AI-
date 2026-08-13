@@ -15,7 +15,7 @@ version: 1.5
 > **Status**: 구현 완료 · 브라우저 전 구간 검증됨(1→2→3)
 > **Related**: [banner-studio-ui.plan.md](../../01-plan/features/banner-studio-ui.plan.md) ·
 > [image-generation.design.md](image-generation.design.md) ·
-> [admin-design-system.md](../../guides/admin-design-system.md)
+> [screen-decisions.md](../../guides/screen-decisions.md)
 
 ---
 
@@ -34,9 +34,9 @@ version: 1.5
 `.claude/skills/adcenter-design-system/`이 유일한 기준이고, `src/app/globals.css`가
 코드가 실제로 쓰는 값이다. 문서에 옮겨 적으면 반드시 어긋난다.
 
-> ②는 두 번 실패해서 나온 규칙이다. 이 문서의 이전 판과 `admin-design-system.md`가
+> ②는 두 번 실패해서 나온 규칙이다. 이 문서의 이전 판과 `screen-decisions.md`가
 > 사이드바를 "거의 블랙"이라고 적어둔 탓에 사이드바를 검정으로 만들었고(실제 `#f8f9fa`),
-> 2026-08-11 감사에서 `admin-design-system.md`가 **8곳 더 틀린 채** 기준 노릇을
+> 2026-08-11 감사에서 `screen-decisions.md`가 **8곳 더 틀린 채** 기준 노릇을
 > 하고 있는 게 드러났다 — 없는 컴포넌트 스펙, 타입 스케일에 없는 크기, 실측 교체 후에도
 > 남아 있던 "추정치" 경고. 그래서 그 문서에서 겹치는 절반을 걷어냈다.
 > **틀린 문서는 없는 문서보다 나쁘다.**
@@ -135,7 +135,7 @@ AI 생성 버튼은 네 단계를 돈다 — ① 입력 전 `disabled` ② 입�
 진행 문구를 순환시킨다. 이미지·카피 모두 수십 초가 걸려 빈 화면이면 멈춘 것처럼 보인다.
 구현: [GenerativeLoading.tsx](../../../src/components/ai-banner/GenerativeLoading.tsx)
 
-**에러를 어느 방법으로 낼지**는 [admin-design-system.md §3](../../guides/admin-design-system.md)이 정한다.
+**에러를 어느 방법으로 낼지**는 [screen-decisions.md §3](../../guides/screen-decisions.md)이 정한다.
 
 세부 폴리시 기준은 [ui-polish-checklist.md](../../guides/ui-polish-checklist.md) 참고.
 

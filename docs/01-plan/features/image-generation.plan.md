@@ -5,13 +5,13 @@ version: 1.3
 
 # image-generation Planning Document
 
-> **Summary**: 광고주가 오브젝트(상품/서비스)를 입력하면, Gemini(Google AI Studio) API로 스타일 1(3D 기본 아이콘)과 스타일 2(2D 플랫 아이콘) 배너 이미지 2장을 사전 선택 없이 동시 자동 생성한다. 마음에 안 드는 쪽만 개별로 "다시 생성하기" 할 수 있고, 이때 브랜드 컬러를 지정할 수 있다.
+> **Summary**: 광고주가 오브젝트(상품/서비스)를 입력하면, Gemini(Google AI Studio) API로 스타일 1(3D 기본 아이콘)과 스타일 2(2D 플랫 아이콘) 배너 이미지 2장을 사전 선택 없이 동시 자동 생성한다. 다시 만들 때는 2장을 함께 새로 만든다.
 >
 > **Project**: AI 배너 스튜디오
-> **Version**: 0.3.0
+> **Version**: 0.4.0
 > **Author**: gojuhee
-> **Date**: 2026-08-04
-> **Status**: Draft
+> **Date**: 2026-08-13
+> **Status**: 구현 완료 — FR 9개 중 4개 완료 · 1개 부분 · 4개 폐기(§3.1)
 
 ---
 
@@ -21,7 +21,7 @@ version: 1.3
 |-------------|---------|
 | **Problem** | 보험·금융·증권처럼 상품을 시각화하기 어려운 업종은 이미지 방향을 잡기 어렵고, 비디자이너 광고주는 매체 규격에 맞는 이미지를 직접 제작하기 어렵다 |
 | **Solution** | 오브젝트 텍스트 입력만으로 Gemini API가 스타일 1(3D)+2(2D) 2장을 사전 선택 없이 자동 생성 — 미리보기 없는 "생성 전 스타일 선택"은 비디자이너에게 판단 부담이라 배제 |
-| **Function/UX Effect** | 이미지 제작 시간 단축, 은유적 오브젝트 표현, 결과 2장을 바로 비교(A/B) 가능, 마음에 안 드는 스타일만 개별 재생성 + 브랜드 컬러 반영으로 3장 대비 리소스 절감 |
+| **Function/UX Effect** | 이미지 제작 시간 단축, 은유적 오브젝트 표현, 결과 2장을 바로 비교(A/B) 가능 |
 | **Core Value** | 비디자이너 광고주도 카카오페이 매체 가이드에 맞는 전문적인 배너 이미지를 즉시 확보 |
 
 ---
@@ -34,7 +34,7 @@ version: 1.3
 | **WHO** | 카카오페이 광고주 (비디자이너 포함), Fit 배너 소재를 등록하는 담당자 |
 | **RISK** | Gemini가 투명 배경을 프롬프트만으로 만족 못해 배경제거 후처리가 필수 의존성이 됨, 종량제 비용이 사용량에 비례해 계속 증가 |
 | **SUCCESS** | 오브젝트 입력 1회로 스타일 1+2 이미지 2장이 240×240px/PNG/500KB 이하 스펙을 만족하며 생성됨 |
-| **SCOPE** | 이번 feature는 "오브젝트 입력 → 이미지 2장 자동 생성 → 개별 재생성/브랜드 컬러 조정"까지이며, 카피 생성(copy-recommendation)과 광고센터 등록(adcenter-register)은 별도 feature |
+| **SCOPE** | 이번 feature는 "오브젝트 입력 → 이미지 2장 자동 생성 → 다시 생성"까지이며, 카피 생성(copy-recommendation)과 광고센터 등록(adcenter-register)은 별도 feature |
 
 ---
 
@@ -42,11 +42,11 @@ version: 1.3
 
 ### 1.1 Purpose
 
-오브젝트(상품/서비스) 텍스트 입력만으로, 카카오페이 Fit 배너 규격(240×240px, PNG, 500KB 이하, 투명 배경)에 맞는 스타일 1(3D 기본 아이콘)+스타일 2(2D 플랫 아이콘) 이미지 2장을 자동 생성한다. 결과 화면에서 마음에 안 드는 스타일만 개별로 다시 생성할 수 있고, 이때 브랜드 컬러(hex)를 지정할 수 있다.
+오브젝트(상품/서비스) 텍스트 입력만으로, 카카오페이 Fit 배너 규격(240×240px, PNG, 500KB 이하, 투명 배경)에 맞는 스타일 1(3D 기본 아이콘)+스타일 2(2D 플랫 아이콘) 이미지 2장을 자동 생성한다. 다시 만들 때는 2장을 함께 새로 만든다.
 
 > **Update (2026-08-03)**: 최초 계획은 3스타일(기본 3D/2D 플랫/3D 듀얼)을 한 번에 모두 생성하는 것이었다. 이후 "생성 전 스타일 1개 선택" 방식도 검토했으나, 미리보기 없이 추상적인 스타일 이름만 보고 고르게 하는 건 비디자이너에게 나쁜 UX로 판단해 폐기했다. 3D 듀얼 오브젝트 믹스 스타일은 이번 feature 범위에서 폐기한다.
 >
-> **Update (2026-08-04, Gemini 전환)**: 이미지 생성 API를 Recraft에서 Google AI Studio(Gemini, `gemini-2.5-flash-image`)로 변경. 최종 UX: 오브젝트 입력 → 스타일 1+2 두 장을 사전 선택 없이 동시 자동 생성 → 결과 화면에서 마음에 안 드는 1장만 "다시 생성하기"(+ 브랜드 컬러 지정 가능) → 재생성 이력은 이전/다음으로 넘겨볼 수 있음(버튼 문구 미정).
+> **Update (2026-08-04, Gemini 전환)**: 이미지 생성 API를 Recraft에서 Google AI Studio(Gemini, `gemini-2.5-flash-image`)로 변경. 당시 계획한 UX: 오브젝트 입력 → 스타일 1+2 두 장을 동시 자동 생성 → 1장만 재생성 → 이력 탐색. 뒤의 둘은 이후 폐기됐다(§3.1 FR-07~09).
 
 ### 1.2 Background
 
@@ -57,8 +57,9 @@ version: 1.3
 - [docs/patterns/image-style-patterns.md](../../patterns/image-style-patterns.md) — 베이스 프롬프트, 스타일 1(3D)/2(2D) 정의
 - [docs/patterns/assets/reference-2d/, reference-3d/](../../patterns/assets/) — 스타일 레퍼런스 이미지
 - [docs/guides/kakaopay-banner-guide.md](../../guides/kakaopay-banner-guide.md) — 이미지 규격, 업종별 유의사항
-- `.claude/agents/image-research-agent.md` — 사전 리서치 서브에이전트
-- `.claude/skills/generate-banner-image/SKILL.md` — 실행 스킬 (현재 API 연동부 TBD)
+- [src/lib/prompt-compiler.ts](../../../src/lib/prompt-compiler.ts) — 오브젝트 블루프린트 생성·캐시 (`resolveObjectBlueprint`)
+- `prompt-system/OBJECTS/` — 오브젝트별 블루프린트 캐시
+- `.claude/agents/image-research-agent.md` — 같은 절차의 개발용 서브에이전트. **런타임에서는 호출되지 않는다**
 
 ---
 
@@ -66,20 +67,20 @@ version: 1.3
 
 ### 2.1 In Scope
 
-- [ ] 오브젝트 입력 UI (텍스트 입력 + 업종 선택 옵션 + "생성" 버튼, **스타일 사전 선택 없음**)
-- [ ] `image-research-agent` 호출 로직 (오브젝트 분석, 은유적 대체 오브젝트 제안)
-- [ ] `generate-banner-image` 스킬의 실제 Gemini API 연동 (Next.js API Route)
-- [ ] 스타일 1(3D)+2(2D) 2장 동시 생성 및 결과 화면 표시
-- [ ] 결과 화면에서 스타일별 "다시 생성하기" (개별, 브랜드 컬러 hex 입력 가능)
-- [ ] 재생성 이력을 이전/다음으로 넘겨보는 버전 탐색 UI
+- [x] 오브젝트 입력 UI (텍스트 입력 + 업종 선택 옵션 + "생성" 버튼, **스타일 사전 선택 없음**)
+- [x] 오브젝트 블루프린트 보강 (`resolveObjectBlueprint` — 캐시 우선, 없으면 Claude가 작성해 저장)
+- [x] Gemini API 연동 (Next.js API Route `/api/generate-image`)
+- [x] 스타일 1(3D)+2(2D) 2장 동시 생성 및 결과 화면 표시
+- [~] ~~스타일별 개별 "다시 생성하기"~~ — 폐기, 2장을 함께 다시 만든다
+- [~] ~~재생성 이력 탐색 UI~~ — 폐기
 - [x] 에셋 라이브러리 — 자주 나오는 오브젝트는 매번 생성하지 않고 사전 제작 이미지를 키워드 매칭으로 반환 (`src/lib/asset-library.ts`, 17개 등록, 수식어 오버라이드·제외어 처리 포함). **스타일 1(3D)에만 적용** — 매칭 없으면 동적 생성으로 폴백
-- [x] 스타일 2(2D)는 라이브러리를 타지 않고 항상 Gemini 동적 생성 + 레퍼런스 이미지 3장(멀티모달 첨부, `src/lib/style2-anchors.ts`)으로 품질 보장
+- [x] 스타일 2(2D)는 라이브러리를 타지 않고 항상 **OpenAI `gpt-image-1`** 동적 생성. **레퍼런스 이미지를 붙이지 않는다** — 스타일 1(3D 클레이)을 참고로 첨부하면 리얼리즘이 섞여 결과가 나빠짐을 2026-08-05 실측으로 확인
 
 ### 2.2 Out of Scope
 
 - 카피(서브타이틀/메인타이틀) 생성 — `copy-recommendation` feature에서 별도 처리
 - 광고센터 어드민 등록 — `adcenter-register` feature에서 별도 처리
-- Full Screen 배너용 이미지 스펙 (현재 Fit 배너만 대상, `admin-design-system.md`에도 Full Screen 소재 폼은 TBD)
+- Full Screen 배너용 이미지 스펙 (현재 Fit 배너만 대상, `screen-decisions.md`에도 Full Screen 소재 폼은 TBD)
 - 생성된 이미지의 수동 편집/리터치 기능 (컬러는 "다시 생성" 방식으로 지원, 픽셀 단위 편집은 미지원)
 - **3D 듀얼 오브젝트 믹스 스타일** — 2026-08-03 방향 변경으로 폐기, 스타일은 3D 기본/2D 플랫 2종만 지원
 - **스타일 2용 에셋 라이브러리** — 2D 버전 사전 제작 이미지는 만들지 않음, 항상 동적 생성(레퍼런스 첨부)으로 처리
@@ -90,25 +91,46 @@ version: 1.3
 
 ### 3.1 Functional Requirements
 
+상태는 2026-08-13에 코드를 읽어 맞췄다. 전에는 9개 전부 `Pending`이었는데
+그 사이 4개가 폐기됐고 나머지는 동작하고 있었다.
+
 | ID | Requirement | Priority | Status |
 |----|-------------|----------|--------|
-| FR-01 | 사용자가 오브젝트(상품/서비스명)를 텍스트로 입력할 수 있다 | High | Pending |
-| FR-02 | 입력 시 `image-research-agent`가 실물 시각화 가능 여부를 판단해 오브젝트를 보정한다 | High | Pending |
-| FR-03 | 오브젝트 입력 시 사전 선택 없이 스타일 1(기본 3D 아이콘)+스타일 2(2D 플랫 아이콘) 2장을 동시 자동 생성한다 | High | Pending |
-| FR-04 | 생성된 이미지는 240×240px, PNG, 500KB 이하, 투명 배경(알파 채널) 스펙을 만족한다 | High | Pending |
+| FR-01 | 사용자가 오브젝트(상품/서비스명)를 텍스트로 입력할 수 있다 | High | **Done** |
+| FR-02 | 입력한 오브젝트를 블루프린트(Must Have/Should Have/Avoid/Recognition Cue)로 보강한 뒤 프롬프트에 넣는다 | High | **Done** |
+| FR-03 | 오브젝트 입력 시 사전 선택 없이 스타일 1(기본 3D 아이콘)+스타일 2(2D 플랫 아이콘) 2장을 동시 자동 생성한다 | High | **Done** |
+| FR-04 | 생성된 이미지는 240×240px, PNG, 500KB 이하, 투명 배경(알파 채널) 스펙을 만족한다 | High | **부분** |
 | FR-05 | ~~스타일 3(듀얼 오브젝트)~~ — 2026-08-03 폐기, 스타일은 2종만 지원 | - | Removed |
-| FR-06 | Gemini API 호출 실패 시 사용자에게 에러를 표시하고 재시도할 수 있다 | Medium | Pending |
-| FR-07 | 결과 화면에서 스타일 1장만 골라 "다시 생성하기" 할 수 있다 (다른 1장은 그대로 유지) | High | Pending |
-| FR-08 | 재생성 시 브랜드 컬러(hex)를 입력하면 해당 색을 반영해 다시 생성한다 | Medium | Pending |
-| FR-09 | 스타일별로 재생성 이력을 이전/다음으로 넘겨볼 수 있다 (재생성해도 이전 결과가 사라지지 않음) | Medium | Pending |
+| FR-06 | Gemini API 호출 실패 시 사용자에게 에러를 표시하고 재시도할 수 있다 | Medium | **Done** |
+| FR-07 | ~~결과 화면에서 스타일 1장만 골라 "다시 생성하기"~~ — 2026-08-11 폐기 | - | Removed |
+| FR-08 | ~~재생성 시 브랜드 컬러(hex)를 반영~~ — 2026-08-07 폐기 | - | Removed |
+| FR-09 | ~~스타일별 재생성 이력을 이전/다음으로~~ — FR-07 폐기로 성립하지 않음 | - | Removed |
+
+**FR-02는 서브에이전트가 아니라 코드가 한다.** 원래 문구는
+`image-research-agent`가 호출된다고 적혀 있었는데, `.claude/agents/`의 에이전트는
+개발할 때 Claude Code에만 보이고 Next.js 라우트에서 부를 수 없다.
+실제로는 [prompt-compiler.ts](../../../src/lib/prompt-compiler.ts)의
+`resolveObjectBlueprint()`가 같은 절차를 Claude API 직접 호출로 수행한다 —
+`prompt-system/OBJECTS/{slug}.md`가 있으면 읽고, 없으면 새로 작성해 저장한다.
+실패하면(크레딧 부족 등) 최소 블루프린트로 폴백해 낮은 품질로라도 진행한다.
+
+**FR-04가 "부분"인 이유** — 240×240·PNG·투명 배경은 `sharp`가 강제한다
+(`resize(240, 240, { fit: 'contain', background: alpha 0 })`). 500KB는 `sizeBytes`로
+**재기만 하고 넘어도 거절하지 않는다.**
+
+**FR-07~09를 함께 뺀 경위** — 카드마다 있던 "다시 생성하기"를 하나로 합치면서
+(design §2 "다시 만드는 자리는 하나") FR-07이 사라졌고, 이력(FR-09)은 그 위에
+얹혀 있어 함께 성립하지 않게 됐다. 브랜드 컬러(FR-08)는 생성 스타일이 이미
+고정돼 실효가 없어 2026-08-07에 화면에서 뺐다 — API의 `brandColor` 파라미터는
+남아 있으나 화면에서 아무도 채우지 않는다.
 
 ### 3.2 Non-Functional Requirements
 
 | Category | Criteria | Measurement Method |
 |----------|----------|-------------------|
-| Performance | 스타일 1+2 병렬 생성으로 체감 대기시간 최소화, 개별 재생성은 해당 스타일 1건만 호출 | `Promise.all`로 2개 동시 실행, 재생성은 단건 호출 |
-| Cost | Gemini 종량제 비용을 사용자에게 노출하지 않되, 재생성 남용 방지 | 재생성 버튼에 rate limit 또는 세션당 재생성 횟수 제한 고려 |
-| Compliance | 생성 이미지가 `kakaopay-banner-guide.md`의 업종별 유의사항을 위반하지 않음 | `image-research-agent`의 `industry_caution` 필드로 사전 점검 |
+| Performance | 스타일 1+2 병렬 생성으로 체감 대기시간 최소화 | `Promise.allSettled`로 2개 동시 실행 — 한쪽이 실패해도 다른 쪽은 반환한다 |
+| Cost | Gemini 종량제 비용을 사용자에게 노출하지 않되, 재생성 남용 방지 | **미구현** — rate limit 없음. 화면을 다듬는 동안은 `MOCK_AI=1`로 호출 자체를 막는다 |
+| Compliance | 생성 이미지가 `kakaopay-banner-guide.md`의 업종별 유의사항을 위반하지 않음 | **미구현** — 생성 결과를 검사하는 장치가 없다. 규격(240×240)만 `sharp`가 강제한다 |
 
 ---
 
@@ -136,31 +158,33 @@ version: 1.3
 | Risk | Impact | Likelihood | Mitigation |
 |------|--------|------------|------------|
 | Gemini가 프롬프트만으로 투명 배경을 만족 못함 (체크무늬/불투명 배경으로 나옴 — 실제 확인됨) | High | Confirmed | 배경제거 후처리(rembg 방식)를 필수 파이프라인 단계로 고정. Node 환경엔 `@imgly/background-removal-node` 등 동등 라이브러리 도입 필요 |
-| Gemini 종량제 비용이 예상보다 빠르게 증가 | Medium | Medium | 3장→2장으로 축소, 재생성은 개별 스타일만, 세션당 재생성 횟수 제한 고려 |
-| 은유적 오브젝트 매핑이 부적절하게 나올 수 있음 (예: 업종 오분류) | Medium | Low | `image-research-agent`가 `visualization_note`로 근거를 남겨 검수 가능하게 함 |
-| 브랜드 컬러 지정 재생성이 형태/구도까지 바꿔버릴 수 있음 (재생성은 매번 새로 그리는 방식) | Medium | Medium | 프롬프트에 "색만 바꾸고 나머지는 유지" 지시 강화, 필요시 seed 고정 검토 |
+| 종량제 비용이 예상보다 빠르게 증가 | Medium | Medium | 3장→2장으로 축소. 횟수 제한은 **미도입** — 개발 중에는 `MOCK_AI=1`로 호출을 막는다 |
+| 은유적 오브젝트 매핑이 부적절하게 나올 수 있음 (예: 업종 오분류) | Medium | Low | 블루프린트를 `prompt-system/OBJECTS/{slug}.md`로 남겨 사람이 열어볼 수 있게 함. **자동 검수는 없다** |
+| **생성 결과가 오브젝트를 맞게 그렸는지 아무도 안 본다** | High | Confirmed | 미해결. 규격(240×240)은 `sharp`가 강제하지만 내용 검증 장치가 없고 생성 3모듈에 테스트도 없다 |
 
 ---
 
 ## 6. Impact Analysis
 
-> 그린필드 신규 feature이며, 아직 구현된 코드가 없는 프로젝트 초기 단계다. 기존 소비자(consumer)가 없으므로 6.2/6.3은 해당 없음(N/A).
+> 2026-08-04 작성 당시에는 그린필드였다. 지금은 구현이 끝나 3단계 화면이 이 API를 쓴다 — 아래 6.2를 함께 본다.
 
 ### 6.1 Changed Resources
 
 | Resource | Type | Change Description |
 |----------|------|--------------------|
-| Gemini API 연동 모듈 (스타일 1) | 신규 API Route | 오브젝트+재질+브랜드컬러를 받아 3D 아이콘 생성 요청. 배경제거 후처리 필요 |
-| OpenAI API 연동 모듈 (스타일 2) | 신규 API Route | 디자인 시스템 프롬프트(ROLE~OBJECT BLUEPRINT)로 2D 아이콘 생성. `gpt-image-1` + `background:"transparent"`로 후처리 없이 네이티브 투명 배경 확보 |
-| `image-research-agent` 호출 로직 | 신규 | 오브젝트 입력을 보강 컨텍스트로 변환 |
+| [style1-generate.ts](../../../src/lib/style1-generate.ts) | 구현됨 | Gemini `gemini-2.5-flash-image`로 3D 아이콘 생성 → `@imgly/background-removal-node` 배경제거 → 240×240 |
+| [style2-generate.ts](../../../src/lib/style2-generate.ts) | 구현됨 | OpenAI `gpt-image-1` + `background:"transparent"`로 후처리 없이 네이티브 투명 배경 → 240×240 |
+| [prompt-compiler.ts](../../../src/lib/prompt-compiler.ts) | 구현됨 | 블루프린트 캐시 조회 → 없으면 Claude로 작성·저장 → 프롬프트 조립 |
 
 ### 6.2 Current Consumers
 
-N/A (신규 기능, 기존 소비 코드 없음)
+[Step1ImagePanel.tsx](../../../src/components/ai-banner/Step1ImagePanel.tsx) — 1단계 화면이 `/api/generate-image`를 호출한다. 응답 형태를 바꾸면 이 화면이 함께 깨진다.
 
 ### 6.3 Verification
 
-- [ ] N/A — 그린필드 구현이므로 회귀 검증 대상 없음
+- [x] 테스트 81개 통과 (`npm test`)
+- [ ] **생성 3모듈(`style1-generate` · `style2-generate` · `prompt-compiler`)에 테스트 없음** — 알고 있는 구멍
+- [ ] 실제 API 경로 미검증 — 개발 서버가 `MOCK_AI=1`로 돈다
 
 ---
 
@@ -228,7 +252,10 @@ src/
 
 | Variable | Purpose | Scope | To Be Created |
 |----------|---------|-------|:-------------:|
-| `GEMINI_API_KEY` | Google AI Studio(Gemini) API 인증 | Server | ☑ |
+| `GEMINI_API_KEY` | 스타일 1(3D) 생성 | Server | ☑ |
+| `OPENAI_API_KEY` | 스타일 2(2D) 생성 (`gpt-image-1`) | Server | ☑ |
+| `ANTHROPIC_API_KEY` | 오브젝트 블루프린트 작성 · 카피 생성 | Server | ☑ |
+| `MOCK_AI` | `1`이면 외부 호출 없이 목업 응답. 개발 서버 기본값 | Server | ☑ |
 | ~~`RECRAFT_*`~~ | 폐기됨 (Recraft → Gemini 전환) | - | Removed |
 
 ---
@@ -238,11 +265,13 @@ src/
 1. [x] Gemini API 키 발급 (사용자 직접, Google AI Studio)
 2. [x] Gemini 실제 호출로 스타일 1(3D)/2(2D) 검증 — 재질(clay/glossy), 색상 팔레트, 필수 디테일(눈/바퀴) 프롬프트 튜닝 완료
 3. [x] Next.js 프로젝트 스캐폴딩 완료 (module-1)
-4. [ ] Design document를 이번 변경사항(Gemini, 2스타일, 재생성, 브랜드컬러)에 맞춰 갱신
-5. [ ] module-2: `/api/generate-image` route.ts 구현 (Gemini 호출 + 배경제거 + 리사이즈)
-6. [ ] module-3: 결과 화면 UI (2장 표시, 개별 재생성 버튼, 브랜드 컬러 입력, 버전 이전/다음 탐색)
-7. [x] 에셋 라이브러리(스타일 1) 17개 등록 완료 + 스타일 2 레퍼런스 앵커 3장 확정
+4. [x] Design document 갱신 ([image-generation.design.md](../../02-design/features/image-generation.design.md))
+5. [x] module-2: `/api/generate-image` route.ts 구현 (생성 + 배경제거 + 리사이즈)
+6. [x] module-3: 결과 화면 UI (2장 표시). 개별 재생성·브랜드 컬러·이력 탐색은 폐기(§3.1)
+7. [x] 에셋 라이브러리(스타일 1) 17개 등록 완료
 8. [ ] 실사용 로그 기반으로 라이브러리 확장 (보험/여행 업종 등 빈 카테고리 채우기)
+9. [ ] **생성 3모듈에 테스트 추가** — `style1-generate` · `style2-generate` · `prompt-compiler`
+10. [ ] **실제 API 경로 검증** — 지금까지 목업으로만 돌렸다
 
 ---
 
@@ -253,3 +282,4 @@ src/
 | 0.1 | 2026-08-03 | Initial draft (스타일 3종, Recraft) | gojuhee |
 | 0.2 | 2026-08-03 | 스타일 3(듀얼) 폐기, 사전 선택 후 1장 생성으로 변경 | gojuhee |
 | 0.3 | 2026-08-04 | Recraft → Gemini 전환, 사전 선택 UX 폐기 → 스타일1+2 동시 자동생성, 개별 재생성 + 브랜드 컬러, 재생성 이력 탐색, 에셋 라이브러리 스코프 추가 | gojuhee |
+| 0.4 | 2026-08-13 | **코드를 읽어 문서를 실제와 맞췄다.** FR 9개가 전부 `Pending`이었는데 4개 완료·1개 부분·4개 폐기였다. FR-02는 서브에이전트가 아니라 `resolveObjectBlueprint()`가 한다는 점, 스타일 2가 Gemini가 아니라 OpenAI `gpt-image-1`이고 레퍼런스를 첨부하지 않는다는 점을 바로잡았다. 미구현으로 남은 것(비용 제한·결과 검증·생성 모듈 테스트)을 감추지 않고 표시 | gojuhee |

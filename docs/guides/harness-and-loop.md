@@ -36,7 +36,7 @@
 ```
 .claude/skills/adcenter-design-system/   ← 유일한 기준 (별도 저장소를 링크)
 src/app/globals.css                      ← 코드가 쓰는 값. 대조 대상
-docs/guides/admin-design-system.md       ← 이 제품의 결정만
+docs/guides/screen-decisions.md       ← 이 제품의 결정만
 docs/guides/kakaopay-banner-guide.md     ← 매체 규격 (협상 불가)
 ```
 

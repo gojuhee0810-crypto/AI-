@@ -46,7 +46,7 @@ AI 배너 스튜디오는 이러한 제작 과정을 이미지 생성부터 카�
 | 카피 작성 규칙 | `docs/patterns/copy-patterns-v2.md` |
 | 매체 규격 (메인 14자 / 서브 15자 / 240×240 PNG) | `docs/guides/kakaopay-banner-guide.md` |
 | **디자인 시스템 (컴포넌트 28종·토큰·접근성)** | **`.claude/skills/adcenter-design-system/`** |
-| 화면 흐름·필드 정의·에러 표현 결정 | `docs/guides/admin-design-system.md` |
+| 화면 흐름·필드 정의·에러 표현 결정 | `docs/guides/screen-decisions.md` |
 | UI 폴리시 기준 | `docs/guides/ui-polish-checklist.md` |
 | **작업 방식 (하네스·루프)** | `docs/guides/harness-and-loop.md` |
 
@@ -59,7 +59,7 @@ AI 배너 스튜디오는 이러한 제작 과정을 이미지 생성부터 카�
 감사에서 17개 중 16개 일치, 1개 의도적 이탈).
 
 **어느 문서에도 컴포넌트 값을 옮겨 적지 말 것.** 두 곳에 있으면 반드시 어긋난다 —
-`docs/guides/admin-design-system.md`가 그렇게 8곳 틀린 채 기준 노릇을 했다.
+`docs/guides/screen-decisions.md`가 그렇게 8곳 틀린 채 기준 노릇을 했다.
 
 ## 핵심 원칙
 - **코드로 확인 가능한 건 LLM에게 맡기지 않는다.** 글자수·중복·금칙어는 코드가 검사하고,

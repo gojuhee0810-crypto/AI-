@@ -1,13 +1,13 @@
 # 광고센터 화면 결정 사항
 
-> **디자인 시스템이 아닙니다.** 컴포넌트·토큰·타이포는 원본 시스템에 있습니다:
+> 광고센터 3개 화면(캠페인·광고그룹·소재)이 **어떤 칸을 받고 에러를 어떻게 내는지**.
 >
-> ```
-> .claude/skills/adcenter-design-system/
-> ```
+> 컴포넌트·토큰·타이포는 여기 없습니다 — `.claude/skills/adcenter-design-system/`이
+> 유일한 기준입니다.
 >
-> 이 문서에는 그 시스템이 답하지 않는 것 — **이 제품이 무엇을 만들고 어떤 칸을
-> 받는가** — 만 남깁니다.
+> 2026-08-13에 `admin-design-system.md`에서 이름을 바꿨습니다. 옛 이름이
+> "디자인 시스템"이라 값의 기준처럼 읽혔고, 실제로 **8곳 틀린 채 기준 노릇을
+> 했습니다**(아래 §이 문서를 이렇게 나눈 이유).
 
 ## 이 문서를 이렇게 나눈 이유
 
@@ -85,7 +85,13 @@
 | 랜딩URL | URL 텍스트 | ✓ | `https://` 형식 |
 | 심사 참고사항 | 텍스트영역 | - | 500자 |
 
-> ⚠️ 이 글자수/이미지 스펙은 `image-style-patterns.md`, `copy-patterns.md`, `kakaopay-banner-guide.md`에도 반영해야 합니다 — 메인 카피 14자는 매우 타이트하므로 카피 생성 스킬의 프롬프트 제약을 이 값으로 맞춰야 합니다. (반영 완료: kakaopay-banner-guide.md)
+> ⚠️ 이 글자수/이미지 스펙은 [copy-patterns-v2.md](../patterns/copy-patterns-v2.md) ·
+> [image-style-patterns.md](../patterns/image-style-patterns.md) ·
+> [kakaopay-banner-guide.md](kakaopay-banner-guide.md)와 **같은 값이어야 합니다.**
+> 메인 14자는 매우 타이트해서 카피 생성 프롬프트가 이 값을 그대로 받아야 합니다.
+>
+> 카피 규칙의 기준은 **v2**입니다 — `docs/patterns/copy-patterns.md`(v1)는 남아 있지만
+> `CLAUDE.md` 색인이 가리키는 것은 v2입니다.
 
 **Full Screen 배너 소재 폼**은 이번 스크린샷에 포함되지 않음 — TBD. 다만 미리보기상 구성은 헤드라인(예: "3% 돌려드려요!") + 서브카피(혜택 요약) + 기간 정보 + CTA 버튼("혜택 확인하기") 구조로 추정됩니다.
 
