@@ -4,14 +4,11 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { removeBackground } from '@imgly/background-removal-node';
-import sharp from 'sharp';
 import { buildStylePrompts } from './image-style-patterns';
+import { toBannerPng, type BannerImage } from './banner-image';
 import type { IconMaterial } from '@/types/image-generation';
 
-export interface Style1GenerateResult {
-  buffer: Buffer;
-  sizeBytes: number;
-}
+export type Style1GenerateResult = BannerImage;
 
 /** primaryObject를 스타일 1(3D) 이미지로 동적 생성하고 240×240 PNG 버퍼로 반환한다. */
 export async function generateStyle1Dynamic(
@@ -45,10 +42,5 @@ export async function generateStyle1Dynamic(
   const transparentBlob = await removeBackground(blob);
   const transparentBuffer = Buffer.from(await transparentBlob.arrayBuffer());
 
-  const resized = await sharp(transparentBuffer)
-    .resize(240, 240, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toBuffer();
-
-  return { buffer: resized, sizeBytes: resized.byteLength };
+  return toBannerPng(transparentBuffer);
 }

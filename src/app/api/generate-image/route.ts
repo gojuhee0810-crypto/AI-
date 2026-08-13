@@ -7,7 +7,7 @@
 import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import path from 'path';
-import sharp from 'sharp';
+import { toBannerPng } from '@/lib/banner-image';
 import { findLibraryAsset } from '@/lib/asset-library';
 import { findStyle2LibraryAsset } from '@/lib/style2-asset-library';
 import { generateStyle1Dynamic } from '@/lib/style1-generate';
@@ -40,20 +40,9 @@ async function libraryImageToGeneratedImage(
   publicPath: string,
 ): Promise<GeneratedImage> {
   const absolutePath = path.join(process.cwd(), 'public', publicPath);
-  const rawBuffer = await readFile(absolutePath);
-  // 라이브러리 원본은 240×240이 아닐 수 있으므로(예: 1024×1536) 항상 리사이즈해서
-  // GeneratedImage.widthPx/heightPx(240 고정 타입) 계약을 실제로 지킨다.
-  const resized = await sharp(rawBuffer)
-    .resize(240, 240, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toBuffer();
-  return {
-    style,
-    imageUrl: `data:image/png;base64,${resized.toString('base64')}`,
-    widthPx: 240,
-    heightPx: 240,
-    sizeBytes: resized.byteLength,
-  };
+  // 라이브러리 원본은 240×240이 아닐 수 있으므로(예: 1024×1536) 항상 규격에 맞춘다.
+  const { buffer, sizeBytes } = await toBannerPng(await readFile(absolutePath));
+  return bufferToGeneratedImage(style, buffer, sizeBytes);
 }
 
 function bufferToGeneratedImage(style: ImageStyleKey, buffer: Buffer, sizeBytes: number): GeneratedImage {

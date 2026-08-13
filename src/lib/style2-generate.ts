@@ -4,13 +4,10 @@
 // 나빠짐이 2026-08-05 실측으로 확인됨.
 
 import OpenAI from 'openai';
-import sharp from 'sharp';
 import { resolveObjectBlueprint, compilePrompt } from './prompt-compiler';
+import { toBannerPng, type BannerImage } from './banner-image';
 
-export interface Style2GenerateResult {
-  buffer: Buffer;
-  sizeBytes: number;
-}
+export type Style2GenerateResult = BannerImage;
 
 /** primaryObject를 스타일 2(2D) 이미지로 동적 생성하고 240×240 PNG 버퍼로 반환한다. */
 export async function generateStyle2Dynamic(
@@ -33,11 +30,5 @@ export async function generateStyle2Dynamic(
     throw new Error('OpenAI가 이미지를 반환하지 않았습니다.');
   }
 
-  const rawBuffer = Buffer.from(imageBase64, 'base64');
-  const resized = await sharp(rawBuffer)
-    .resize(240, 240, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toBuffer();
-
-  return { buffer: resized, sizeBytes: resized.byteLength };
+  return toBannerPng(Buffer.from(imageBase64, 'base64'));
 }
