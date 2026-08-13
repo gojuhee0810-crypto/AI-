@@ -204,10 +204,10 @@ LLM은 "다시 써라"는 지시만 받는다. 원래는 검증도 Claude 호출
 `.claude/agents/`의 에이전트는 **광고주가 버튼을 눌러도 돌지 않는다.**
 `src/`가 `.claude/`를 참조하는 코드는 한 줄도 없다(2026-08-11 확인).
 
-> ⚠️ `image-research-agent` · `copy-research-agent`의 description이 "생성 직전에
-> 호출된다"고 적혀 있는데 **그렇게 되지 않는다.** Claude Code 서브에이전트라
-> Next.js 라우트에서 부를 수 없다. 설명을 고치거나, 진짜로 넣으려면
-> `src/lib/`의 함수로 옮겨야 한다.
+`image-research-agent` · `copy-research-agent`의 description이 한때 "생성 직전에
+호출된다"고 적혀 있었다(2026-08-13 수정). 런타임에서 같은 일을 하는 것은 각각
+`prompt-compiler.ts`의 `resolveObjectBlueprint()`와 `copy-generate.ts`다 —
+**기능은 있었고 적힌 경로가 틀렸다.** 두 에이전트는 개발용으로 남긴다.
 
 ---
 

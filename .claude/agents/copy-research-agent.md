@@ -3,7 +3,10 @@ name: copy-research-agent
 description: >
   카피 생성 전에 사용자가 입력한 혜택 텍스트를 분석하고, 업종/혜택 유형에 맞는
   고성과(CTR) 카피 패턴과 참고 사례를 조사해 generate-copy 스킬에 넘길 보강
-  컨텍스트를 만든다. 혜택 입력 → 카피 추천 흐름에서 카피 생성 직전에 호출된다.
+  컨텍스트를 만든다. **개발용이다 — 제품이 돌 때 호출되지 않는다.** Claude Code
+  서브에이전트라 Next.js 라우트에서 부를 수 없다. 런타임 카피 생성은
+  src/lib/copy-generate.ts가 단독으로 하고, 이 에이전트는 패턴 문서
+  (docs/patterns/copy-patterns-v2.md)를 갱신할 때 쓴다.
 tools: WebSearch, WebFetch, Read, Grep
 ---
 

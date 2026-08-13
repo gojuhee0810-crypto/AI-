@@ -5,7 +5,11 @@ description: >
   스타일 2(2D 디자인 시스템) 프롬프트가 그 오브젝트에 정확히 맞도록 보강 컨텍스트를
   만든다. 스타일 2는 실물을 그대로 베끼지 않고 "인식에 필요한 핵심 특징"만 추상화한
   SEMANTIC BLUEPRINT(Must Have/Should Have/Avoid/Recognition Cue)로 정리한다.
-  오브젝트 입력 → 이미지 생성 흐름에서 이미지 생성 직전에 호출된다.
+  **개발용이다 — 제품이 돌 때 호출되지 않는다.** Claude Code 서브에이전트라
+  Next.js 라우트에서 부를 수 없다. 런타임에서 같은 일을 하는 것은
+  src/lib/prompt-compiler.ts의 resolveObjectBlueprint()이고, 결과는
+  prompt-system/OBJECTS/{slug}.md에 캐시된다. 이 에이전트는 그 블루프린트를
+  손으로 미리 만들어 두거나 품질을 점검할 때 쓴다.
 tools: WebSearch, WebFetch, Read, Grep, Glob
 ---
 
