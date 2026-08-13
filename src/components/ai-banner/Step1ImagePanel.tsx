@@ -21,6 +21,7 @@ import {
   type BadgeStyle,
   type ImageSourceType,
 } from '@/types/banner-flow';
+import { fitToBannerSpec } from '@/lib/banner-image-client';
 import { AlertDialog } from '@/components/ai-banner/AlertDialog';
 import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
 import { CharCounter } from '@/components/ai-banner/CharCounter';
@@ -175,7 +176,14 @@ export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialNam
     readUpload(
       file,
       PRODUCT_UPLOAD_RULE,
-      (dataUrl) => patch({ productImageUrl: dataUrl }),
+      (dataUrl) => {
+        // 업로드 원본을 그대로 두면 배너가 매체 규격을 어긴다 — 업로드 규칙은
+        // JPEG·400×400·1MB까지 받지만 매체는 PNG·240×240·500KB다. 여기서 맞추지
+        // 않으면 소재를 다 만든 뒤 등록 단계에서야 거절당한다.
+        fitToBannerSpec(dataUrl)
+          .then((fitted) => patch({ productImageUrl: fitted }))
+          .catch(() => setUploadError('failed'));
+      },
       setUploadError,
     );
   }
