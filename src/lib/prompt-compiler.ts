@@ -86,7 +86,7 @@ async function compileByConcatenation(objectBlueprint: string): Promise<string> 
  * prompt-system/ 문서 + 오브젝트 블루프린트를 Claude로 자연어 프롬프트 1개로
  * 컴파일한다. Claude 호출이 실패하면(크레딧 부족 등) 결정적 조립으로 폴백한다.
  */
-export async function compilePrompt(objectBlueprint: string, brandColor?: string): Promise<string> {
+export async function compilePrompt(objectBlueprint: string): Promise<string> {
   try {
     const [system, styleGuide, shapeGrammar, colorToken, camera, output] = await Promise.all([
       readDoc('SYSTEM.md'),
@@ -97,11 +97,7 @@ export async function compilePrompt(objectBlueprint: string, brandColor?: string
       readDoc('OUTPUT.md'),
     ]);
 
-    const brandColorNote = brandColor
-      ? `\n\n---\n\nBRAND COLOR OVERRIDE: Use ${brandColor} as the Primary color instead of the category default.`
-      : '';
-    const designSystemInput =
-      [styleGuide, shapeGrammar, objectBlueprint, colorToken, camera, output].join('\n\n---\n\n') + brandColorNote;
+    const designSystemInput = [styleGuide, shapeGrammar, objectBlueprint, colorToken, camera, output].join('\n\n---\n\n');
 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
@@ -115,9 +111,6 @@ export async function compilePrompt(objectBlueprint: string, brandColor?: string
     return textBlock.text.trim();
   } catch (error) {
     console.error('[prompt-compiler] Claude 컴파일 실패, 조립 폴백 사용:', error);
-    const fallback = await compileByConcatenation(objectBlueprint);
-    return brandColor
-      ? `${fallback}\n\n---\n\nBRAND COLOR OVERRIDE: Use ${brandColor} as the Primary color instead of the category default.`
-      : fallback;
+    return compileByConcatenation(objectBlueprint);
   }
 }

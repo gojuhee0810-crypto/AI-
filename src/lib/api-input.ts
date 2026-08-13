@@ -15,8 +15,6 @@ export const API_LIMITS = {
   benefit: 25,
   /** 타겟 — 화면 입력이 없고 서버 기본값이라 넉넉히 둔다 */
   target: 50,
-  /** 재질·브랜드컬러·시각화 노트 — 화면에 없는 선택 입력 */
-  optional: 100,
 } as const;
 
 /**

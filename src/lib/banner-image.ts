@@ -9,7 +9,7 @@
 import sharp from 'sharp';
 import { BANNER_IMAGE_PX, type BannerImage } from './banner-image-spec';
 
-export { BANNER_IMAGE_PX, BANNER_IMAGE_MAX_BYTES, exceedsBannerSizeLimit } from './banner-image-spec';
+export { BANNER_IMAGE_PX } from './banner-image-spec';
 export type { BannerImage } from './banner-image-spec';
 
 /**
@@ -30,8 +30,6 @@ export async function toBannerPng(input: Buffer): Promise<BannerImage> {
   return { buffer, sizeBytes: buffer.byteLength };
 }
 
-// 결과가 500KB를 넘는지 여기서 검사하지 않는다 — 넘을 수 없기 때문이다.
-// 240×240 RGBA의 비압축 크기가 225KB이고, 압축이 전혀 안 되는 무작위 노이즈를
-// 넣어도 226KB였다(2026-08-13 실측). 발동할 수 없는 검사를 두면 읽는 사람이
-// "여기서 걸러진다"고 믿게 된다. 상한이 실제로 문제되는 곳은 사용자 업로드
-// 경로이고, 그쪽은 banner-image-client.ts가 같은 규격으로 맞춘다.
+// 결과가 500KB를 넘는지 검사하지 않는다 — 넘을 수 없기 때문이다(근거는
+// banner-image-spec.ts). 상한이 실제로 문제되던 곳은 사용자 업로드 경로이고,
+// 그쪽은 banner-image-client.ts가 같은 규격으로 맞춘다.

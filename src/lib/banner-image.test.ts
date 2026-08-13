@@ -10,12 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import sharp from 'sharp';
-import {
-  toBannerPng,
-  exceedsBannerSizeLimit,
-  BANNER_IMAGE_PX,
-  BANNER_IMAGE_MAX_BYTES,
-} from './banner-image';
+import { toBannerPng, BANNER_IMAGE_PX } from './banner-image';
 
 /** 지정한 크기의 불투명 단색 PNG를 만든다. */
 async function solidPng(width: number, height: number): Promise<Buffer> {
@@ -97,8 +92,18 @@ test('이미지가 아닌 버퍼는 거절한다 — 조용히 빈 이미지를 
   await assert.rejects(() => toBannerPng(Buffer.from('이건 이미지가 아니다')));
 });
 
-test('매체 상한은 500KB이고 경계에서 넘지 않는다', () => {
-  assert.equal(BANNER_IMAGE_MAX_BYTES, 500 * 1024);
-  assert.equal(exceedsBannerSizeLimit(BANNER_IMAGE_MAX_BYTES), false);
-  assert.equal(exceedsBannerSizeLimit(BANNER_IMAGE_MAX_BYTES + 1), true);
+test('규격에 맞춘 결과는 매체 상한 500KB를 넘을 수 없다 — 최악의 입력으로 확인', async () => {
+  // 압축이 전혀 안 되는 무작위 노이즈. 240×240 RGBA의 비압축 크기가 225KB라
+  // PNG로 나온 결과도 그 언저리를 넘지 못한다. 상한 검사 대신 이 사실을 붙잡는다.
+  const px = BANNER_IMAGE_PX * BANNER_IMAGE_PX * 4;
+  const noise = Buffer.alloc(px);
+  for (let i = 0; i < px; i++) noise[i] = Math.floor(Math.random() * 256);
+  const source = await sharp(noise, {
+    raw: { width: BANNER_IMAGE_PX, height: BANNER_IMAGE_PX, channels: 4 },
+  })
+    .png()
+    .toBuffer();
+
+  const { sizeBytes } = await toBannerPng(source);
+  assert.ok(sizeBytes <= 500 * 1024, `최악의 경우가 ${Math.round(sizeBytes / 1024)}KB로 상한을 넘었다`);
 });

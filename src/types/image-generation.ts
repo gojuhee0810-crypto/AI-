@@ -3,19 +3,9 @@
 
 export type ImageStyleKey = 'style-1-3d-basic' | 'style-2-2d-flat';
 
-export type IconMaterial = 'clay' | 'glossy';
-
 export interface GenerateImageRequest {
-  /** image-research-agent가 보강한 실물/은유 오브젝트 */
+  /** prompt-compiler가 블루프린트로 보강할 실물/은유 오브젝트 */
   primaryObject: string;
-  /** 검수용 근거 노트 */
-  visualizationNote?: string;
-  /** 3D 스타일(style-1) 재질. 기본값 'clay' */
-  material?: IconMaterial;
-  /** "다시 생성하기"에서 지정하는 브랜드 컬러(hex). 특정 스타일 1장만 재생성할 때 사용 */
-  brandColor?: string;
-  /** 특정 스타일 1장만 재생성할 때 지정 (없으면 2장 모두 생성) */
-  regenerateStyle?: ImageStyleKey;
 }
 
 export interface GeneratedImage {

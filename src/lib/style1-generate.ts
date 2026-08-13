@@ -6,22 +6,12 @@ import { GoogleGenAI } from '@google/genai';
 import { removeBackground } from '@imgly/background-removal-node';
 import { buildStylePrompts } from './image-style-patterns';
 import { toBannerPng, type BannerImage } from './banner-image';
-import type { IconMaterial } from '@/types/image-generation';
 
 export type Style1GenerateResult = BannerImage;
 
 /** primaryObject를 스타일 1(3D) 이미지로 동적 생성하고 240×240 PNG 버퍼로 반환한다. */
-export async function generateStyle1Dynamic(
-  primaryObject: string,
-  material: IconMaterial = 'clay',
-  brandColor?: string,
-): Promise<Style1GenerateResult> {
-  const [{ prompt }] = buildStylePrompts({
-    primaryObject,
-    material,
-    brandColor,
-    onlyStyle: 'style-1-3d-basic',
-  });
+export async function generateStyle1Dynamic(primaryObject: string): Promise<Style1GenerateResult> {
+  const [{ prompt }] = buildStylePrompts({ primaryObject, onlyStyle: 'style-1-3d-basic' });
 
   const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   const response = await client.models.generateContent({

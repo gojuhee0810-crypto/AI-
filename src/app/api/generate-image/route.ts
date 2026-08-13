@@ -1,6 +1,5 @@
 // Design Ref: §3 API — 오브젝트 입력 → 스타일1(3D)+스타일2(2D) 이미지 생성.
 // 각 스타일: 라이브러리 우선(findLibraryAsset/findStyle2LibraryAsset) → 없으면 동적 생성.
-// 재생성(regenerateStyle 지정)은 라이브러리 매칭이었더라도 항상 동적 생성으로 전환한다.
 // 2026-08-05: Supabase Storage 연동 전이라 이미지는 base64 data URL로 반환한다 —
 // 프로젝트에 Supabase 키가 연결되면 업로드 후 실제 URL을 반환하도록 교체할 것.
 
@@ -13,12 +12,7 @@ import { findStyle2LibraryAsset } from '@/lib/style2-asset-library';
 import { generateStyle1Dynamic } from '@/lib/style1-generate';
 import { generateStyle2Dynamic } from '@/lib/style2-generate';
 import { isMockMode, mockDelay, mockImages } from '@/lib/mock-mode';
-import {
-  API_LIMITS,
-  GENERATION_FAILED_MESSAGE,
-  checkOptional,
-  checkRequired,
-} from '@/lib/api-input';
+import { API_LIMITS, GENERATION_FAILED_MESSAGE, checkRequired } from '@/lib/api-input';
 import type {
   GenerateImageRequest,
   GenerateImageResponse,
@@ -63,23 +57,14 @@ export async function POST(request: Request): Promise<NextResponse<GenerateImage
     return errorResponse('INVALID_INPUT', '요청 본문이 올바른 JSON이 아닙니다.', 400);
   }
 
-  const { primaryObject, material, brandColor, regenerateStyle, visualizationNote } = body;
-
-  const invalid =
-    checkRequired('primaryObject', primaryObject, API_LIMITS.objectTag) ??
-    checkOptional('material', material, API_LIMITS.optional) ??
-    checkOptional('brandColor', brandColor, API_LIMITS.optional) ??
-    checkOptional('visualizationNote', visualizationNote, API_LIMITS.optional);
+  const invalid = checkRequired('primaryObject', body.primaryObject, API_LIMITS.objectTag);
   if (invalid) return errorResponse('INVALID_INPUT', invalid, 400);
+  const { primaryObject } = body;
 
-  // 재생성(regenerateStyle 지정) 시엔 라이브러리 매칭이었더라도 항상 동적 생성으로 전환한다.
-  const isRegenerate = Boolean(regenerateStyle);
-  const stylesToGenerate: ImageStyleKey[] = regenerateStyle
-    ? [regenerateStyle]
-    : ['style-1-3d-basic', 'style-2-2d-flat'];
+  const stylesToGenerate: ImageStyleKey[] = ['style-1-3d-basic', 'style-2-2d-flat'];
 
-  // 라이브러리에 있는 오브젝트는 원래 외부 호출이 없지만, 미등록 오브젝트와
-  // "다시 생성하기"는 Gemini/OpenAI를 부른다. MOCK_AI=1이면 전부 건너뛴다.
+  // 라이브러리에 있는 오브젝트는 외부 호출이 없고, 미등록 오브젝트만 Gemini/OpenAI를
+  // 부른다. MOCK_AI=1이면 전부 건너뛴다.
   if (isMockMode()) {
     console.warn('[generate-image] MOCK_AI=1 — 실제 호출 없이 목업 이미지를 반환합니다.');
     await mockDelay();
@@ -88,18 +73,18 @@ export async function POST(request: Request): Promise<NextResponse<GenerateImage
 
   async function generateOneStyle(style: ImageStyleKey): Promise<GeneratedImage> {
     if (style === 'style-1-3d-basic') {
-      const libraryMatch = isRegenerate ? null : findLibraryAsset(primaryObject);
+      const libraryMatch = findLibraryAsset(primaryObject);
       if (libraryMatch) {
         return libraryImageToGeneratedImage('style-1-3d-basic', `/images/library/${path.basename(libraryMatch.path)}`);
       }
-      const { buffer, sizeBytes } = await generateStyle1Dynamic(primaryObject, material, brandColor);
+      const { buffer, sizeBytes } = await generateStyle1Dynamic(primaryObject);
       return bufferToGeneratedImage('style-1-3d-basic', buffer, sizeBytes);
     }
-    const libraryMatch = isRegenerate ? null : findStyle2LibraryAsset(primaryObject);
+    const libraryMatch = findStyle2LibraryAsset(primaryObject);
     if (libraryMatch) {
       return libraryImageToGeneratedImage('style-2-2d-flat', `/images/library-2d/${path.basename(libraryMatch.path)}`);
     }
-    const { buffer, sizeBytes } = await generateStyle2Dynamic(primaryObject, brandColor);
+    const { buffer, sizeBytes } = await generateStyle2Dynamic(primaryObject);
     return bufferToGeneratedImage('style-2-2d-flat', buffer, sizeBytes);
   }
 
@@ -128,7 +113,6 @@ export async function POST(request: Request): Promise<NextResponse<GenerateImage
 
   const response: GenerateImageResponse = {
     images,
-    visualizationNote,
     ...(partialErrors.length > 0 ? { partialErrors } : {}),
   };
   return NextResponse.json(response);

@@ -10,12 +10,9 @@ import { toBannerPng, type BannerImage } from './banner-image';
 export type Style2GenerateResult = BannerImage;
 
 /** primaryObject를 스타일 2(2D) 이미지로 동적 생성하고 240×240 PNG 버퍼로 반환한다. */
-export async function generateStyle2Dynamic(
-  primaryObject: string,
-  brandColor?: string,
-): Promise<Style2GenerateResult> {
+export async function generateStyle2Dynamic(primaryObject: string): Promise<Style2GenerateResult> {
   const objectBlueprint = await resolveObjectBlueprint(primaryObject);
-  const prompt = await compilePrompt(objectBlueprint, brandColor);
+  const prompt = await compilePrompt(objectBlueprint);
 
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const result = await client.images.generate({

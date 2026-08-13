@@ -110,12 +110,10 @@ test('Claude를 못 부르면 문서를 이어붙인 프롬프트로 폴백한�
   assert.ok(prompt.length > 500, '문서를 실제로 이어붙였는지');
 });
 
-test('폴백 프롬프트에도 브랜드 컬러 지시가 붙는다', async () => {
-  const prompt = await withoutClaudeKey(() => compilePrompt('# Object Blueprint: 테스트', '#FFEB00'));
-  assert.match(prompt, /BRAND COLOR OVERRIDE: Use #FFEB00/);
-});
-
-test('브랜드 컬러를 안 주면 오버라이드 문구가 없다', async () => {
-  const prompt = await withoutClaudeKey(() => compilePrompt('# Object Blueprint: 테스트'));
-  assert.ok(!prompt.includes('BRAND COLOR OVERRIDE'));
+test('폴백 프롬프트는 문서 순서대로 이어붙인다 — 블루프린트가 스타일 규칙 뒤에 온다', async () => {
+  const marker = '# Object Blueprint: 순서검사';
+  const prompt = await withoutClaudeKey(() => compilePrompt(marker));
+  const blueprintAt = prompt.indexOf(marker);
+  assert.ok(blueprintAt > 0, '블루프린트가 맨 앞이면 스타일 규칙이 빠진 것이다');
+  assert.ok(prompt.indexOf('---') < blueprintAt, '문서 구분자가 있어야 한다');
 });
