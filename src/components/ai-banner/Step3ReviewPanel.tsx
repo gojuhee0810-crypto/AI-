@@ -115,7 +115,7 @@ function EditRow({
 
           아이콘만 보이고 글자는 스크린리더에만 간다. */}
       <span className="sr-only">변경</span>
-      <IconPenHorizlineLine aria-hidden className="size-5 shrink-0 text-ink-muted" />
+      <IconPenHorizlineLine aria-hidden className="size-4 shrink-0 text-ink-muted" />
     </button>
   );
 }

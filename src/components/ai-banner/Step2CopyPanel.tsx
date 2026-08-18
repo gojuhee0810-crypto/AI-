@@ -237,7 +237,7 @@ export function Step2CopyPanel({ state, patch, showErrors }: Props) {
                       {/* 3단계 소재 정보 행과 같은 연필이다. 거기선 줄 전체가
                           버튼이라 아이콘만 두고, 여기선 이 버튼이 컨트롤이라
                           글자까지 붙인다 — 그림은 같고 무게만 다르다. */}
-                      <IconPenHorizlineLine aria-hidden className="size-5 shrink-0" />
+                      <IconPenHorizlineLine aria-hidden className="size-4 shrink-0" />
                       {isEditing ? '완료' : '수정'}
                     </button>
                   )}
