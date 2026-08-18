@@ -3,7 +3,8 @@
 // Design Ref: Figma 12:115606 팝업 컴포넌트 — 껍데기·버튼 값은 popup.ts에 모아 뒀다.
 //
 // 원본은 확인 버튼 하나짜리 알럿이다. 여기선 값을 고치는 폼이라 취소/저장 두 개를
-// 나란히 두되(그룹 298 = 144×2 + 10) 정렬과 크기는 그대로 따른다.
+// 나란히 둔다 — 폭은 고정 144px이 아니라 본문(위 카드 영역)과 같은 좌우 여백 안에서
+// flex-1로 반반 나눈다(2026-08-19 확정, popup.ts BUTTON_BASE 참조).
 // 입력 필드만 좌측 정렬한다 — 가운데 정렬하면 라벨과 값이 어긋나 눈이 좌우로 튄다.
 //
 // 3단계에서 값을 고칠 때 앞 단계로 되돌아가지 않게 하려고 만들었다. 되돌아가면
@@ -79,10 +80,10 @@ export function EditDialog({
           {/* 입력은 좌측 정렬 — 가운데로 두면 라벨과 값이 어긋난다 */}
           <div className="max-h-[56vh] overflow-y-auto">{children}</div>
 
-          <div
-            className="flex justify-center"
-            style={{ gap: POPUP_BUTTON_GAP }}
-          >
+          {/* justify-center를 안 쓴다 — 버튼이 flex-1이라 이미 폭을 다 채운다.
+              남는 폭이 있으면 그건 실수로 안 채워진 것이지, 가운데로 몰아야 할
+              여백이 아니다. */}
+          <div className="flex" style={{ gap: POPUP_BUTTON_GAP }}>
             <button type="button" onClick={onClose} className={POPUP_BUTTON.support}>
               취소
             </button>

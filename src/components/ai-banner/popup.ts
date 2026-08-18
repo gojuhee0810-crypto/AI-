@@ -31,8 +31,15 @@ export const POPUP_WIDTH = 420;
  */
 export const POPUP_BODY = 'flex flex-col items-center gap-6 px-8 pt-8 pb-10';
 
-/** 버튼 영역 — 높이 80 고정. 버튼은 위에 붙고 아래 32가 남는다. */
-export const POPUP_FOOTER = 'relative flex h-20 justify-center';
+/**
+ * 버튼 영역 — 높이 80 고정. 버튼은 위에 붙고 아래 32가 남는다.
+ *
+ * px-8을 여기 안 두는 이유는 POPUP_FADE 때문이다 — absolute + inset-x-0인 자식은
+ * 가장 가까운 relative 조상의 **패딩 상자** 기준으로 눕는다. 여기 padding을 주면
+ * 페이드도 같이 32px씩 줄어들어 버튼 여백과 같이 좁아진다. 버튼 쪽 여백은
+ * POPUP_BUTTON_ROW가 따로 진다.
+ */
+export const POPUP_FOOTER = 'relative flex h-20';
 
 /**
  * 버튼 영역 위에 얹히는 34px 페이드.
@@ -43,13 +50,30 @@ export const POPUP_FOOTER = 'relative flex h-20 justify-center';
 export const POPUP_FADE =
   'pointer-events-none absolute inset-x-0 -top-[34px] h-[34px] bg-gradient-to-b from-transparent to-surface';
 
+/**
+ * 버튼(들)을 감싸는 줄. POPUP_FOOTER 안에서 이것만 px-8을 져서, 본문 카드
+ * 영역과 좌우 여백이 같아진다 — 버튼 하나(AlertDialog)든 둘(EditDialog)이든
+ * flex-1 버튼이 이 안에서 남은 폭을 나눠 갖는다.
+ */
+export const POPUP_BUTTON_ROW = 'relative z-10 flex w-full px-8';
+
+/**
+ * 원래는 `w-[144px] shrink-0`(Figma 실측, 그룹 298 = 144×2 + 10)로 고정폭이었다.
+ * 2026-08-19: 버튼 줄 전체 폭을 본문(카드) 영역과 맞추고 남은 공간을 반반 나누는
+ * 걸로 사용자가 확정했다 — 그러면 폭은 본문 폭에 따라 달라지므로 고정 px를 쓸 수
+ * 없다. `flex-1`로 남은 공간을 나눠 갖는다(부모가 flex 컨테이너여야 한다).
+ */
 const BUTTON_BASE =
-  'h-12 w-[144px] shrink-0 rounded-[24px] text-[16px] leading-[26px] font-medium tracking-[-0.2px] transition-[background-color,scale] duration-150 active:scale-[0.96]';
+  'h-12 flex-1 rounded-[24px] text-[16px] leading-[26px] font-medium tracking-[-0.2px] transition-[background-color,scale] duration-150 active:scale-[0.96]';
 
 export const POPUP_BUTTON = {
   primary: `${BUTTON_BASE} bg-brand text-ink enabled:hover:bg-[#f2df00] disabled:cursor-not-allowed disabled:bg-fill disabled:text-ink-muted`,
   support: `${BUTTON_BASE} bg-fill text-ink hover:bg-[#e5e9ec]`,
 } as const;
 
-/** 버튼 두 개 사이 간격(px) — 그룹 298 안에 144×2가 들어간다 */
-export const POPUP_BUTTON_GAP = 10;
+/**
+ * 버튼 두 개 사이 간격(px). 원래 10(그룹 298 실측)이었는데, 폭을 flex-1로 바꾸며
+ * 본문 카드 사이 간격(`gap-3` = 12px, Step3ReviewPanel 이미지 카드 그리드와 동일한
+ * "space/12" 토큰)에 맞춰 12로 통일했다.
+ */
+export const POPUP_BUTTON_GAP = 12;

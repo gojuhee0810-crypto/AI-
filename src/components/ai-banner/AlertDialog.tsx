@@ -6,7 +6,8 @@
 //   카드 폭 420 · radius 8 · 딤 rgba(6,11,17,0.6)
 //   본문 영역: pt32/px32/pb40, 타이틀↔본문 24
 //   타이틀 24/35/-0.4 Medium · 본문 18/28/-0.2 Regular(DemiLight)
-//   버튼 영역: 높이 80 고정, 버튼 144×48이 위에 붙고 아래 32
+//   버튼 영역: 높이 80 고정, 버튼 높이 48이 위에 붙고 아래 32
+//   (버튼 폭은 2026-08-19부터 고정 144가 아니라 flex-1 — popup.ts 참조)
 //   버튼 영역 위 34px 페이드(투명→흰색)
 //
 // 값을 고치는 EditDialog와 달리 여기엔 선택지가 없다. 무슨 일이 있었는지 알리고
@@ -17,6 +18,7 @@ import { useEffect, useRef } from 'react';
 import {
   POPUP_BODY,
   POPUP_BUTTON,
+  POPUP_BUTTON_ROW,
   POPUP_FADE,
   POPUP_FOOTER,
   POPUP_SHELL,
@@ -75,9 +77,11 @@ export function AlertDialog({ open, title, description, onClose }: Props) {
 
           <div className={POPUP_FOOTER}>
             <div aria-hidden className={POPUP_FADE} />
-            <button type="button" autoFocus onClick={onClose} className={POPUP_BUTTON.primary}>
-              확인
-            </button>
+            <div className={POPUP_BUTTON_ROW}>
+              <button type="button" autoFocus onClick={onClose} className={POPUP_BUTTON.primary}>
+                확인
+              </button>
+            </div>
           </div>
         </>
       )}
