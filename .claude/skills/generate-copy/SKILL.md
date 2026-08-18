@@ -9,38 +9,54 @@ description: >
 # generate-copy
 
 혜택 입력 → 카피 4종 추천 흐름의 실행 스킬. 원문은
-[copy-patterns.md](../../../docs/patterns/copy-patterns.md)에 있다.
+[copy-patterns-v2.md](../../../docs/patterns/copy-patterns-v2.md)에 있다 — v1은
+남아 있지만 기준이 아니다(`CLAUDE.md` 참조).
+
+> 실제 구현은 [copy-generate.ts](../../../src/lib/copy-generate.ts)다. 아래 절차는
+> 그 코드가 하는 일이다 — 서브에이전트 호출이나 LLM 자체 검증은 없다. **LLM은 글자를
+> 못 세므로**, 검사는 전부 코드가 한다(`validateRecommendations`).
 
 ## 절차
 
 1. 사용자가 입력한 혜택 텍스트(자유 텍스트: 혜택/조건/기한이 섞여 있을 수 있음)를 받는다.
-2. **copy-research-agent**를 호출해 업종/혜택유형/키워드/톤/컴플라이언스 주의사항을 보강받는다.
-3. `docs/patterns/copy-patterns.md`의 시스템 프롬프트를 그대로 적용하되, 2번에서 받은 보강 컨텍스트(keywords, tone_suggestion)를 참고 정보로 함께 제공한다.
-4. 4개 프레임워크 각각 subtitle(≤15자, 공백 포함)·main_title(≤14자, 공백 포함)을 생성한다.
-5. **글자수 직접 검증**: 생성된 각 subtitle/main_title의 글자수(공백 포함)를 세어, 제한을 초과하면 의미를 유지하며 줄여서 다시 출력한다. 이 검증을 통과하기 전까지 결과를 확정하지 않는다.
-6. `compliance_flags`에 주의사항이 있으면, 해당 프레임워크 카피가 그 표현을 쓰지 않았는지 다시 확인한다.
-7. 아래 스키마의 순수 JSON으로만 결과를 반환한다 (마크다운/설명 텍스트 금지).
+2. `docs/patterns/copy-patterns-v2.md`의 시스템 프롬프트로 Claude를 1콜 호출해 4개
+   프레임워크 각각 subtitle(≤15자, 공백 포함)·main_title(≤14자, 공백 포함)을 생성한다.
+3. **코드가 검사한다** — `validateRecommendations()`가 글자수·문구 반복·오브젝트명
+   재노출·규제 표현 4가지를 기계적으로 확인한다.
+4. 위반이 없으면 그대로 반환한다 — **정상 케이스는 여기서 끝, 1콜.**
+5. 위반이 있으면 위반 필드만 지목한 보정 프롬프트로 Claude를 한 번 더 호출하고,
+   다시 3번으로 검사한다. 그래도 남으면 경고만 남기고 반환한다(무한 루프 방지).
+6. 아래 스키마의 순수 JSON으로만 결과를 반환한다 (마크다운/설명 텍스트 금지).
+   패턴은 4종 정의돼 있지만 **입력값에 가장 맞는 3개만** 고른다 — pattern4(조건+혜택강조형)는
+   pattern2(혜택조건+결과형)와 구조가 겹치므로, benefit이 조건부(예: "~하면 ~%할인")일
+   때만 pattern2 대신 채택한다.
 
 ```json
 {
-  "copies": [
-    { "framework": "상황 기반 + 문제 제기", "subtitle": "...", "main_title": "..." },
-    { "framework": "혜택 조건 + 결과형(보상)", "subtitle": "...", "main_title": "..." },
-    { "framework": "혜택 + 행동 유도 CTA형", "subtitle": "...", "main_title": "..." },
-    { "framework": "조건 + 혜택 강조형", "subtitle": "...", "main_title": "..." }
-  ]
+  "recommendations": [
+    { "pattern": "상황기반+문제제기", "subtitle": "...", "maintitle": "...", "reason": "..." },
+    { "pattern": "혜택조건+결과형", "subtitle": "...", "maintitle": "...", "reason": "..." },
+    { "pattern": "혜택+CTA형", "subtitle": "...", "maintitle": "...", "reason": "..." }
+  ],
+  "warning": null
 }
 ```
 
+`reason`은 검수용 근거 한 줄이다. `pattern`은 `CopyPattern` 타입(4종) 중 하나이고,
+`framework`·`main_title` 같은 이름은 쓰지 않는다 — [copy-generation.ts](../../../src/types/copy-generation.ts)의
+`CopyRecommendation`이 실제 계약이다.
+
 ## 실제 구현
 
-Next.js API Route에서 Anthropic Claude API(`@anthropic-ai/sdk`, 모델 `claude-sonnet-5`)로 호출한다.
-구현 코드 예시와 파라미터(effort, output_config.format 등)는
-[copy-patterns.md의 "Claude API 연동"](../../../docs/patterns/copy-patterns.md#claude-api-연동) 참고.
+Next.js API Route(`/api/generate-copy`)에서 Anthropic Claude API(`@anthropic-ai/sdk`,
+모델 `claude-sonnet-4-5`)로 호출한다. 시스템 프롬프트 전문과 보정 프롬프트는
+[copy-generate.ts](../../../src/lib/copy-generate.ts)에 있다 — `copy-patterns-v2.md`는
+그 설계 근거를 남긴 문서지 실행되는 프롬프트 원문이 아니다.
 `ANTHROPIC_API_KEY` 환경변수 필요 (`.env.local`).
 
 ## 참조 파일
 
-- [docs/patterns/copy-patterns.md](../../../docs/patterns/copy-patterns.md) — 시스템 프롬프트 원본, 글자수 스펙, Claude API 연동 코드
+- [copy-generate.ts](../../../src/lib/copy-generate.ts) — 시스템 프롬프트 원문, 검증 로직, Claude 호출
+- [copy-generation.ts](../../../src/types/copy-generation.ts) — 요청/응답 타입 (실제 계약)
+- [docs/patterns/copy-patterns-v2.md](../../../docs/patterns/copy-patterns-v2.md) — 왜 이렇게 설계했는지
 - [docs/guides/kakaopay-banner-guide.md](../../../docs/guides/kakaopay-banner-guide.md) — 금칙어/업종별 유의사항
-- `.claude/agents/copy-research-agent.md` — 사전 리서치 서브에이전트

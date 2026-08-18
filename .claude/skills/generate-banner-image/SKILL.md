@@ -19,14 +19,15 @@ description: >
 실제 구현체: `POST /api/generate-image` ([route.ts](../../../src/app/api/generate-image/route.ts)). 아래는 그 내부 동작이다.
 
 1. 사용자가 입력한 오브젝트(`primaryObject`)를 받는다.
-2. **스타일 1(3D)**: `src/lib/asset-library.ts`의 `findLibraryAsset()`으로 매칭 시도 → 매칭되면 생성 없이 그 이미지를 240×240으로 리사이즈해 반환. 매칭 없으면 [`src/lib/style1-generate.ts`](../../../src/lib/style1-generate.ts)가 `image-style-patterns.ts`로 프롬프트를 조립해 Gemini(`gemini-2.5-flash-image`)로 생성하고, `@imgly/background-removal-node`로 배경을 제거한 뒤 240×240으로 리사이즈한다 (Gemini는 투명 배경을 못 만들어줘서 후처리 필수).
+2. **스타일 1(3D)**: `src/lib/asset-library.ts`의 `findLibraryAsset()`으로 매칭 시도 → 매칭되면 생성 없이 그 이미지를 240×240으로 리사이즈해 반환. 매칭 없으면 [`src/lib/style1-generate.ts`](../../../src/lib/style1-generate.ts)가 먼저 `resolveObjectBlueprint()`로 오브젝트 블루프린트를 받아 `objectDetailForStyle1()`로 모양 관련 부분(CONSTRUCTION·SILHOUETTE·RECOGNITION CUE·AVOID)만 뽑고, `image-style-patterns.ts`로 프롬프트를 조립해 Gemini(`gemini-2.5-flash-image`)로 생성한 뒤 `@imgly/background-removal-node`로 배경을 제거하고 240×240으로 리사이즈한다 (Gemini는 투명 배경을 못 만들어줘서 후처리 필수). 2026-08-13 이전엔 오브젝트 이름만 넘겨서 "전기자전거"에 배터리가 안 그려지는 문제가 있었다 — 블루프린트를 넣기 시작한 뒤로 해결.
 3. **스타일 2(2D)**: `src/lib/style2-asset-library.ts`의 `findStyle2LibraryAsset()`으로 매칭 시도 → 매칭되면 생성 없이 그 이미지를 240×240으로 리사이즈해 반환. 매칭 없으면 [`src/lib/style2-generate.ts`](../../../src/lib/style2-generate.ts)가:
    - a. [`src/lib/prompt-compiler.ts`](../../../src/lib/prompt-compiler.ts)의 `resolveObjectBlueprint()`로 `prompt-system/OBJECTS/{object}.md`를 읽거나(없으면 Claude가 새로 작성해 저장), `compilePrompt()`로 `prompt-system/`의 전역 규칙(`SYSTEM.md`/`STYLE_GUIDE.md`/`SHAPE_GRAMMAR.md`/`COLOR_TOKEN.md`/`CAMERA.md`/`OUTPUT.md`)과 함께 Claude(`claude-sonnet-4-5`)로 자연어 프롬프트 1개로 컴파일한다.
    - b. **Claude 호출이 실패하면(크레딧 부족 등) 자동으로 폴백** — 블루프린트는 범용 최소 템플릿으로, 컴파일은 MD 섹션 단순 이어붙이기로 대체한다. 폴백이어도 파이프라인은 계속 동작한다(품질만 약간 낮음).
    - c. 컴파일된 프롬프트를 OpenAI(`gpt-image-1`, `images.generate`, `background: "transparent"`, 레퍼런스 이미지 미첨부)로 렌더링하고 240×240으로 리사이즈한다.
    - 2026-08-05 실측: 스타일 1(3D 클레이) 이미지를 `images.edit`에 레퍼런스로 붙이면 리얼리즘이 섞여 결과가 나빠지므로 붙이지 않는다. API 결과가 ChatGPT 앱 직접 생성보다 품질이 들쭉날쭉해서, 검증된 좋은 결과는 `style2-asset-library.ts`에 캐시해 재사용한다.
-4. **재생성**: `regenerateStyle`이 지정되면 라이브러리 매칭을 건너뛰고 항상 동적 생성으로 전환한다. `brandColor`(hex)가 주어지면 Primary 컬러를 그 값으로 교체한다.
-5. 두 스타일 결과를 함께 반환한다(`GenerateImageResponse.images`).
+4. 두 스타일을 `Promise.allSettled`로 동시에 시도한다 — 하나가 실패해도(예: 스타일2만
+   실패) 이미 만들어진 다른 스타일까지 버리지 않고 `images`에 담아 반환하며, 실패한
+   쪽은 `partialErrors`에 담는다. 둘 다 실패했을 때만 502를 반환한다.
 
 ## 참조 파일
 
@@ -36,10 +37,9 @@ description: >
 - `src/lib/asset-library.ts` / `src/lib/style2-asset-library.ts` — 스타일 1/2 각각의 사전 제작 에셋 키워드 매칭 (완전히 분리된 라이브러리, 서로 참조 안 함)
 - [docs/guides/kakaopay-banner-guide.md](../../../docs/guides/kakaopay-banner-guide.md) — 이미지 규격(240×240px, PNG, 500KB), 업종별 유의사항
 
-## 알려진 한계 (2026-08-05 감사 결과)
+## 알려진 한계 (2026-08-13 갱신)
 
-- Claude(`ANTHROPIC_API_KEY`) 정상 경로(진짜 자연어 컴파일)는 크레딧 부족으로 실측 검증 안 됨 — 폴백 경로만 검증됨.
 - `resolveObjectBlueprint`가 동의어 정규화를 안 해서 "핸드폰"/"휴대폰"처럼 같은 오브젝트가 다른 블루프린트 파일로 쌓일 수 있음.
-- 스타일1/2 중 하나만 실패해도 route.ts가 전체를 502로 버림 — 부분 성공을 살리지 못함.
+- 생성 결과가 지시(블루프린트)를 실제로 따랐는지 검사하는 장치가 없음 — 규격(240×240)만 `sharp`가 강제하고, 내용은 사람이 봐야 함.
 - 과금되는 외부 API(Gemini/OpenAI/Claude) 호출에 rate limit이 없음.
-- 자동화된 테스트 없음 — 전부 수동 curl 검증.
+- `style1-generate.ts` · `style2-generate.ts`의 **외부 API 호출부는 자동 테스트가 없음** — `banner-image.ts`(규격 변환)와 `prompt-compiler.ts`(폴백 경로)는 테스트로 덮여 있지만, 실제 Gemini/OpenAI 호출은 여전히 수동 curl로만 확인함.
