@@ -33,15 +33,28 @@ export const TEXT = {
 const BASE =
   `block w-full rounded-lg border px-4 ${TEXT.body16} text-ink transition-colors duration-150 outline-none`;
 
+// 자동완성(오토필)을 고르면 브라우저가 배경을 강제로 옅은 파랑/노랑으로 칠한다.
+// background-color를 덮어써도 안 먹는다 — 브라우저가 그 선언 자체를 이긴다.
+// box-shadow inset으로 안쪽을 우리 배경색으로 다시 채우는 게 알려진 우회법이다
+// (2026-08-18: "소재 이름"에 입력을 마쳐도 파란 배경이 안 없어진다고 확인됨).
+//
+// 클래스 문자열을 변수로 조립하면(예: 함수로 만들어 반환) Tailwind가 소스를 훑을 때
+// 완성된 이름을 못 찾아 CSS 자체를 안 만든다 — 그래서 두 상태 각각 완전한 문자열로
+// 따로 적는다. 처음에 함수로 합치려다 이 문제로 실제로 안 먹혔다.
+const NORMAL_AUTOFILL =
+  'autofill:[-webkit-text-fill-color:var(--color-ink)] autofill:[box-shadow:0_0_0px_1000px_var(--color-surface)_inset] autofill:[-webkit-box-shadow:0_0_0px_1000px_var(--color-surface)_inset]';
+const ERROR_AUTOFILL =
+  'autofill:[-webkit-text-fill-color:var(--color-error)] autofill:[box-shadow:0_0_0px_1000px_var(--color-error-surface)_inset] autofill:[-webkit-box-shadow:0_0_0px_1000px_var(--color-error-surface)_inset]';
+
 /** 정상: 회색 테두리 + 흰 배경. 포커스에만 테두리가 진해진다. */
-const NORMAL = 'border-line bg-surface placeholder:text-ink-faint focus:border-ink';
+const NORMAL = `border-line bg-surface placeholder:text-ink-faint focus:border-ink ${NORMAL_AUTOFILL}`;
 
 /**
  * 에러: 테두리·배경·placeholder를 함께 붉게.
  * 테두리 1px만 바꾸면 화면이 길 때 훑어봐서 어느 칸이 비었는지 안 보인다.
  */
 const ERROR =
-  'border-required bg-error-surface placeholder:text-error focus:border-required';
+  `border-required bg-error-surface placeholder:text-error focus:border-required ${ERROR_AUTOFILL}`;
 
 export function inputClass(hasError: boolean, extra = ''): string {
   return `${BASE} ${hasError ? ERROR : NORMAL} ${extra}`.trim();
