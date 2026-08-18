@@ -63,4 +63,4 @@ export const TONE_CLASS: Record<ButtonTone, string> = {
  * 24×24에 못 미친다. min-h-6과 px-1로 눌리는 영역을 넓힌다.
  */
 export const TEXT_BUTTON =
-  'flex min-h-6 shrink-0 items-center px-1 text-[14px] leading-[22px] font-medium text-ink underline underline-offset-4 transition-colors duration-150 hover:text-fill-strong';
+  'flex min-h-6 shrink-0 items-center gap-1 px-1 text-[14px] leading-[22px] font-medium text-ink underline underline-offset-4 transition-colors duration-150 hover:text-fill-strong';
