@@ -40,8 +40,9 @@ const SOURCES = sourceFiles().map((path) => ({ path, text: readFileSync(path, 'u
 
 // ── 토큰이 원본과 같은가 ─────────────────────────────────────────
 //
-// globals.css는 원본을 손으로 옮겨 적은 사본이라 갈라진다. 감사 시점에 17개 중
-// 16개가 일치했고, 어긋난 하나는 아래에 이유와 함께 등록해 둔다.
+// globals.css는 원본을 손으로 옮겨 적은 사본이라 갈라진다. 2026-08-11 감사 시점엔
+// 17개 중 16개만 일치했다(--color-accent가 대비 문제로 낮춰져 있었다) — 2026-08-18에
+// 그 값도 원본대로 되돌려서 지금은 전부 일치한다. 그 뒤로 갈리면 여기서 잡힌다.
 
 /** 우리 이름 → 원본 이름. 값이 같아야 한다. */
 const TOKEN_PAIRS: Array<[ours: string, origin: string]> = [
@@ -59,6 +60,7 @@ const TOKEN_PAIRS: Array<[ours: string, origin: string]> = [
   ['--color-fill', '--color-grey100'],
   ['--color-fill-strong', '--color-grey600'],
   ['--color-accent-soft', '--color-blue50'],
+  ['--color-accent', '--color-blue600-base'],
 ];
 
 test('색 토큰이 원본 tokens.css와 같다', { skip: !hasOrigin && '원본 시스템 링크 없음' }, () => {
@@ -71,13 +73,12 @@ test('색 토큰이 원본 tokens.css와 같다', { skip: !hasOrigin && '원본 
   }
 });
 
-test('원본에서 의도적으로 벗어난 토큰은 --color-accent 하나뿐이다', { skip: !hasOrigin && '원본 시스템 링크 없음' }, () => {
-  // #008dff는 배지 배경(#e3f3ff) 위에서 2.96, 흰 배경에서도 3.36이라 14px 글자에
-  // 필요한 4.5를 못 넘는다. 원본 Badge 스펙 자체가 미달이라 한 단계 진하게 내렸다.
-  // 되돌리려면 그 대비 문제를 먼저 해결해야 한다.
-  assert.equal(readToken(GLOBALS, '--color-accent'), '#006bc4');
-  assert.equal(readToken(ORIGIN, '--color-blue600-base'), '#008dff');
-});
+// 2026-08-11 감사부터 2026-08-18까지는 --color-accent(#006bc4)가 원본(#008dff)에서
+// 유일하게 벗어난 토큰이었다 — #008dff가 배지 배경(#e3f3ff) 위 대비 2.96, 흰 배경
+// 3.36으로 14px 글자 기준 4.5(WCAG AA)를 못 넘어서 한 단계 내렸었다. 2026-08-18에
+// 사용자가 대비 경고를 듣고도 원본 값을 확정해 되돌렸다 — 그 대비 문제는 아직
+// 해결되지 않았다(위 TOKEN_PAIRS 동등 검사만 지킨다). 다시 낮추기로 하면 이 값을
+// TOKEN_PAIRS에서 빼고 여기 있던 것과 같은 별도 검사로 되돌리면 된다.
 
 // ── 회귀: known-gaps.md "고쳐서 해결된 것" ────────────────────────
 

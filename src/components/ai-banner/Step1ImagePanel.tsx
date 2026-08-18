@@ -508,6 +508,8 @@ export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialNam
                 <label htmlFor={badgeTextId} className="text-[14px] leading-[22px] text-ink">
                   배지 문구
                 </label>
+                {/* 자체 className을 따로 갖고 있어서 inputClass()의 포커스 색 변경(검정→
+                    파랑, 2026-08-18)이 이 칸만 비껴갔었다 — inputClass()로 통일. */}
                 <input
                   id={badgeTextId}
                   type="text"
@@ -515,7 +517,7 @@ export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialNam
                   placeholder="예) 5% 할인"
                   value={state.badgeText}
                   onChange={(e) => patch({ badgeText: e.target.value })}
-                  className="mt-[15px] h-12 w-full rounded-lg border border-line bg-surface px-4 text-[16px] leading-[26px] text-ink transition-colors duration-150 outline-none placeholder:text-ink-faint focus:border-ink"
+                  className={inputClass(false, 'mt-[15px] h-12')}
                 />
                 <CharCounter value={state.badgeText} limit={BADGE_TEXT_LIMIT} />
               </div>
