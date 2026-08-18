@@ -46,8 +46,14 @@ const NORMAL_AUTOFILL =
 const ERROR_AUTOFILL =
   'autofill:[-webkit-text-fill-color:var(--color-error)] autofill:[box-shadow:0_0_0px_1000px_var(--color-error-surface)_inset] autofill:[-webkit-box-shadow:0_0_0px_1000px_var(--color-error-surface)_inset]';
 
-/** 정상: 회색 테두리 + 흰 배경. 포커스에만 테두리가 진해진다. */
-const NORMAL = `border-line bg-surface placeholder:text-ink-faint focus:border-ink ${NORMAL_AUTOFILL}`;
+/**
+ * 정상: 회색 테두리 + 흰 배경. 포커스일 때만 파랑 테두리로 "지금 여기 입력 중"을
+ * 표시한다. 원본 스펙(`field/border focus`)은 검정이지만, 사용자가 "지금 뭘
+ * 고치고 있는지"가 검정보다 파랑이 한눈에 더 잘 들어온다고 확인했다(2026-08-18).
+ * 새 색을 만들지 않고 이미 있는 `--color-accent`(배지·강조 텍스트용 파랑)를 그대로
+ * 쓴다.
+ */
+const NORMAL = `border-line bg-surface placeholder:text-ink-faint focus:border-accent ${NORMAL_AUTOFILL}`;
 
 /**
  * 에러: 테두리·배경·placeholder를 함께 붉게.

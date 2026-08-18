@@ -22,6 +22,7 @@ import {
   type ImageSourceType,
 } from '@/types/banner-flow';
 import { fitToBannerSpec } from '@/lib/banner-image-client';
+import { IconArrowCounterclockwiseCircularLine } from '@karrotmarket/react-monochrome-icon';
 import { AlertDialog } from '@/components/ai-banner/AlertDialog';
 import { BenefitBadge } from '@/components/ai-banner/BenefitBadge';
 import { CharCounter } from '@/components/ai-banner/CharCounter';
@@ -299,7 +300,11 @@ export function Step1ImagePanel({ state, patch, showErrors, onMissingMaterialNam
               onClick={handleGenerate}
               className={aiGenerateButtonClass(generateTone)}
             >
-              <span aria-hidden>✦</span>
+              {hasResult ? (
+                <IconArrowCounterclockwiseCircularLine aria-hidden className="size-5 shrink-0" />
+              ) : (
+                <span aria-hidden>✦</span>
+              )}
               {state.isGeneratingImages
                 ? '생성 중…'
                 : hasResult
