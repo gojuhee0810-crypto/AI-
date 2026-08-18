@@ -34,15 +34,17 @@ export function aiGenerateButtonClass(tone: ButtonTone): string {
  * "다시 생성하기"처럼 누를 수 있는 버튼에 옅은 노랑을 쓰면 못 누르는 버튼과
  * 같은 색이 되어 구분이 사라진다. 실제로 그렇게 만들었다가 되돌렸다.
  *
- * support는 2026-08-18까지 배경만 있는 `background/support`(#EFF2F4, 테두리 없음)
+ * support는 2026-08-18까지 `background/support`(#EFF2F4) 배경에 테두리가 없는
  * 원본 그대로였는데, 사용자가 실제로 눌러보고 "너무 옅어서 비활성처럼 보인다"고
  * 확인했다. 디자인 시스템 색 참조(`2-tokens/color.md` background/support 행)가
  * 이미 이 경우를 각주로 예상해뒀다 — "흰 배경+테두리 형태로 만들 때 (원본 아님)".
- * 그래서 흰 배경 + `divider/grey300`(`--color-line`) 테두리로 바꿨다. disabled는
- * 그대로 뒀다 — 이 세 버튼(AI 생성 2개 + 하단 CTA)은 전부 Primary 변형이라
- * `background/brand disabled`(옅은 노랑)가 스펙에 맞고, 그 옅은 노랑의 대비
- * 계산(2.14, 위 disabled 톤 주석 참조)도 이미 이 값을 전제로 했다. 회색 disabled로
- * 바꾸려면 그 계산부터 다시 해야 한다.
+ * 처음엔 흰 배경(`bg-surface`)으로 바꿨는데 이번엔 반대로 "가시성이 떨어진다"고
+ * 확인돼, 배경은 원래 쓰던 `bg-fill`(#EFF2F4)로 되돌리고 테두리(`border-line`,
+ * `divider/grey300`)만 더했다 — 흰 배경이 아니라 "옅은 회색 배경 + 테두리"가
+ * 최종형이다. disabled는 그대로 뒀다 — 이 세 버튼(AI 생성 2개 + 하단 CTA)은 전부
+ * Primary 변형이라 `background/brand disabled`(옅은 노랑)가 스펙에 맞고, 그 옅은
+ * 노랑의 대비 계산(2.14, 위 disabled 톤 주석 참조)도 이미 이 값을 전제로 했다.
+ * 회색 disabled로 바꾸려면 그 계산부터 다시 해야 한다.
  */
 /**
  * disabled 톤의 라벨이 조건부인 이유:
@@ -57,7 +59,10 @@ export function aiGenerateButtonClass(tone: ButtonTone): string {
  */
 export const TONE_CLASS: Record<ButtonTone, string> = {
   brand: 'border-transparent bg-brand text-ink enabled:hover:bg-[#f2df00]',
-  support: 'border-line bg-surface text-ink enabled:hover:border-ink-muted enabled:hover:bg-sidebar',
+  // 흰 배경만으로는 옅어서 가시성이 떨어진다고 확인됐다(2026-08-18) — 흰 배경 대신
+  // 원래 support 배경(bg-fill)에 테두리만 더했다. 두 속성 다 새 값이 아니라
+  // 이미 쓰던 토큰이다.
+  support: 'border-line bg-fill text-ink enabled:hover:border-ink-muted enabled:hover:bg-[#e5e9ec]',
   disabled: 'border-transparent bg-brand-disabled text-ink disabled:text-ink/32',
 };
 
