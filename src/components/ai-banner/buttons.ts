@@ -13,8 +13,11 @@ import type { ButtonTone } from '@/types/banner-flow';
  */
 export function aiGenerateButtonClass(tone: ButtonTone): string {
   return [
-    'flex h-12 w-full items-center justify-center gap-2 rounded-[24px] border border-transparent',
+    'flex h-12 w-full items-center justify-center gap-2 rounded-[24px] border',
     'text-[16px] leading-[26px] font-medium',
+    // border-transparent는 TONE_CLASS 쪽으로 옮겼다 — 여기 두면 support의
+    // border-line과 같은 자리(border-color)를 다투게 되어, 클래스 문자열
+    // 뒤에 놓아도 이겼다 지는 게 Tailwind 컴파일 순서에 달려 있었다.
     'transition-[background-color,scale] duration-150 enabled:active:scale-[0.98]',
     'disabled:cursor-not-allowed',
     TONE_CLASS[tone],
@@ -30,6 +33,16 @@ export function aiGenerateButtonClass(tone: ButtonTone): string {
  *
  * "다시 생성하기"처럼 누를 수 있는 버튼에 옅은 노랑을 쓰면 못 누르는 버튼과
  * 같은 색이 되어 구분이 사라진다. 실제로 그렇게 만들었다가 되돌렸다.
+ *
+ * support는 2026-08-18까지 배경만 있는 `background/support`(#EFF2F4, 테두리 없음)
+ * 원본 그대로였는데, 사용자가 실제로 눌러보고 "너무 옅어서 비활성처럼 보인다"고
+ * 확인했다. 디자인 시스템 색 참조(`2-tokens/color.md` background/support 행)가
+ * 이미 이 경우를 각주로 예상해뒀다 — "흰 배경+테두리 형태로 만들 때 (원본 아님)".
+ * 그래서 흰 배경 + `divider/grey300`(`--color-line`) 테두리로 바꿨다. disabled는
+ * 그대로 뒀다 — 이 세 버튼(AI 생성 2개 + 하단 CTA)은 전부 Primary 변형이라
+ * `background/brand disabled`(옅은 노랑)가 스펙에 맞고, 그 옅은 노랑의 대비
+ * 계산(2.14, 위 disabled 톤 주석 참조)도 이미 이 값을 전제로 했다. 회색 disabled로
+ * 바꾸려면 그 계산부터 다시 해야 한다.
  */
 /**
  * disabled 톤의 라벨이 조건부인 이유:
@@ -43,9 +56,9 @@ export function aiGenerateButtonClass(tone: ButtonTone): string {
  * 두 경우가 각자 맞게 된다.
  */
 export const TONE_CLASS: Record<ButtonTone, string> = {
-  brand: 'bg-brand text-ink enabled:hover:bg-[#f2df00]',
-  support: 'bg-fill text-ink enabled:hover:bg-[#e5e9ec]',
-  disabled: 'bg-brand-disabled text-ink disabled:text-ink/32',
+  brand: 'border-transparent bg-brand text-ink enabled:hover:bg-[#f2df00]',
+  support: 'border-line bg-surface text-ink enabled:hover:border-ink-muted enabled:hover:bg-sidebar',
+  disabled: 'border-transparent bg-brand-disabled text-ink disabled:text-ink/32',
 };
 
 // Chip(CHIP_BASE·CHIP_OUTLINE)은 지웠다. 원본 Button은 md 36 / lg 48 두 크기뿐이라
