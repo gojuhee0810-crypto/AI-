@@ -12,7 +12,6 @@ import path from 'path';
 import { toBannerPng } from '@/lib/banner-image';
 import { findLibraryAsset } from '@/lib/asset-library';
 import { findStyle2LibraryAsset } from '@/lib/style2-asset-library';
-import { generateStyle1Dynamic } from '@/lib/style1-generate';
 import { generateStyle2Dynamic } from '@/lib/style2-generate';
 import { isMockMode, mockDelay, mockImages } from '@/lib/mock-mode';
 import { API_LIMITS, GENERATION_FAILED_MESSAGE, checkRequired } from '@/lib/api-input';
@@ -40,6 +39,23 @@ async function libraryImageToGeneratedImage(
   // 라이브러리 원본은 240×240이 아닐 수 있으므로(예: 1024×1536) 항상 규격에 맞춘다.
   const { buffer, sizeBytes } = await toBannerPng(await readFile(absolutePath));
   return bufferToGeneratedImage(style, buffer, sizeBytes);
+}
+
+// style-1 미등록 오브젝트는 무거운 배경제거 의존성을 쓰는 별도 함수로 넘긴다
+// (이 파일의 용량 제한 문제 — 상단 Design Ref 참고).
+async function generateStyle1DynamicRemote(primaryObject: string, requestUrl: string): Promise<GeneratedImage> {
+  const target = new URL('/api/generate-image-style1-dynamic', requestUrl);
+  const res = await fetch(target, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ primaryObject }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error?.message ?? `style-1 동적 생성 실패 (${res.status})`);
+  }
+  const { imageBase64, sizeBytes } = (await res.json()) as { imageBase64: string; sizeBytes: number };
+  return bufferToGeneratedImage('style-1-3d-basic', Buffer.from(imageBase64, 'base64'), sizeBytes);
 }
 
 function bufferToGeneratedImage(style: ImageStyleKey, buffer: Buffer, sizeBytes: number): GeneratedImage {
@@ -80,8 +96,7 @@ export async function POST(request: Request): Promise<NextResponse<GenerateImage
       if (libraryMatch) {
         return libraryImageToGeneratedImage('style-1-3d-basic', `/images/library/${path.basename(libraryMatch.path)}`);
       }
-      const { buffer, sizeBytes } = await generateStyle1Dynamic(primaryObject);
-      return bufferToGeneratedImage('style-1-3d-basic', buffer, sizeBytes);
+      return generateStyle1DynamicRemote(primaryObject, request.url);
     }
     const libraryMatch = findStyle2LibraryAsset(primaryObject);
     if (libraryMatch) {

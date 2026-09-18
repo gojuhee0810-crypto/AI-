@@ -15,15 +15,21 @@ const nextConfig: NextConfig = {
   // linux/x64만 남긴다 — darwin·win32·linux/arm64까지 다 넣었더니 함수가 294MB로
   // Vercel 한도를 넘겨서, 함수가 아예 배포에서 빠지고 정적 500 페이지로 대신
   // 응답하고 있었다(x-matched-path: /500으로 확인). Vercel 함수는 linux/x64로 돈다.
+  // 2026-09-18: onnxruntime-node는 style-1 미등록 오브젝트 전용 함수
+  // (/api/generate-image-style1-dynamic)로 옮겼다 — generate-image 자체엔
+  // 이제 안 붙는다. 그래도 압축 144MB로 여전히 무거워서, Vercel 함수 용량
+  // 한도를 넘겨 그 함수만 배포에서 빠질 위험은 남아 있다(별도 확인 필요).
   outputFileTracingIncludes: {
     '/api/generate-image': [
       './public/images/library/**',
       './public/images/library-2d/**',
+    ],
+    '/api/generate-image-style1-dynamic': [
       './node_modules/onnxruntime-node/bin/napi-v3/linux/x64/**',
     ],
   },
   outputFileTracingExcludes: {
-    '/api/generate-image': [
+    '/api/generate-image-style1-dynamic': [
       './node_modules/onnxruntime-node/bin/napi-v3/darwin/**',
       './node_modules/onnxruntime-node/bin/napi-v3/win32/**',
       './node_modules/onnxruntime-node/bin/napi-v3/linux/arm64/**',
