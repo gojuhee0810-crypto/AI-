@@ -3,7 +3,6 @@
 // @imgly/background-removal-node로 보정한 뒤 240×240으로 리사이즈한다.
 
 import { GoogleGenAI } from '@google/genai';
-import { removeBackground } from '@imgly/background-removal-node';
 import { buildStylePrompts } from './image-style-patterns';
 import { resolveObjectBlueprint, objectDetailForStyle1 } from './prompt-compiler';
 import { toBannerPng, type BannerImage } from './banner-image';
@@ -35,6 +34,9 @@ export async function generateStyle1Dynamic(primaryObject: string): Promise<Styl
 
   const rawBuffer = Buffer.from(imagePart.inlineData.data, 'base64');
 
+  // 라이브러리 매치 요청(예: "쿠폰")은 이 함수 자체를 안 타므로, 이 무거운 모듈을
+  // 최상단에서 항상 불러오면 그쪽 요청까지 같이 깨진다 — 실제로 쓸 때만 불러온다.
+  const { removeBackground } = await import('@imgly/background-removal-node');
   // @imgly/background-removal-node는 Blob 입력을 받는다.
   const blob = new Blob([new Uint8Array(rawBuffer)], { type: 'image/png' });
   const transparentBlob = await removeBackground(blob);
