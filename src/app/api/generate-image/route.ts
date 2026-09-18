@@ -5,6 +5,9 @@
 
 import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
+
+// Gemini/OpenAI 생성 + 배경 제거가 Vercel 기본 제한(10초)보다 오래 걸릴 수 있다.
+export const maxDuration = 60;
 import path from 'path';
 import { toBannerPng } from '@/lib/banner-image';
 import { findLibraryAsset } from '@/lib/asset-library';
